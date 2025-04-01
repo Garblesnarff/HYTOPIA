@@ -1,23 +1,16 @@
 {
-  "name": "cyber-crawler",
-  "version": "0.1.0",
-  "description": "Physics-based rogue-lite dungeon crawler with crafting mechanics for HYTOPIA Game Jam 2",
-  "main": "index.js",
-  "scripts": {
-    "start": "hytopia start",
-    "build": "hytopia build",
-    "dev": "hytopia dev",
-    "test": "jest"
-  },
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@hytopia/sdk": "latest"
-  },
+  "name": "cybercrawler",
+  "module": "index.js",
+  "type": "module",
+  "private": true,
   "devDependencies": {
-    "typescript": "^5.3.0",
-    "jest": "^29.0.0",
-    "@types/jest": "^29.0.0",
-    "ts-jest": "^29.0.0"
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@hytopia.com/assets": "^0.2.8",
+    "hytopia": "^0.3.27"
   }
 }
