@@ -3,7 +3,7 @@
  * Handles momentum-based damage calculations and physics interactions
  */
 
-import { World, Entity, Vector3 } from 'hytopia';
+import { World, Entity, Vector3, Vector3Like } from 'hytopia'; // Added Vector3Like
 
 // Physics constants - can be tweaked for game feel
 export const PHYSICS_CONSTANTS = {
@@ -20,8 +20,8 @@ export const PHYSICS_CONSTANTS = {
 export function initPhysics(world: World): void {
   console.log('Initializing physics system...');
   
-  // Set world gravity
-  world.setGravity(0, -PHYSICS_CONSTANTS.GRAVITY, 0);
+  // Set world gravity via the simulation object
+  world.simulation.setGravity({ x: 0, y: -PHYSICS_CONSTANTS.GRAVITY, z: 0 }); // Changed to world.simulation.setGravity
   
   console.log('Physics system initialized');
 }
@@ -53,7 +53,7 @@ export function calculateMomentumDamage(impactVelocity: number, entityMass: numb
  * @param direction The direction vector of the force
  * @param magnitude The magnitude of the force
  */
-export function applyImpulse(entity: Entity, direction: Vector3, magnitude: number): void {
+export function applyImpulse(entity: Entity, direction: Vector3Like, magnitude: number): void { // Changed type to Vector3Like
   // Normalize direction if it's not already
   const normalizedDir = normalizeVector(direction);
   
@@ -70,7 +70,7 @@ export function applyImpulse(entity: Entity, direction: Vector3, magnitude: numb
  * @param vector The vector to normalize
  * @returns The normalized vector
  */
-function normalizeVector(vector: Vector3): Vector3 {
+function normalizeVector(vector: Vector3Like): Vector3Like { // Changed type to Vector3Like
   const magnitude = Math.sqrt(vector.x * vector.x + vector.y * vector.y + vector.z * vector.z);
   
   // Prevent division by zero

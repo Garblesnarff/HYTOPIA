@@ -3,8 +3,9 @@
  * Handles player movement, physics interactions, and abilities
  */
 
-import { World, Player, PlayerEntity, EntityEvent, Vector3 } from 'hytopia';
+import { World, Player, PlayerEntity, EntityEvent, Vector3, PlayerInput, PlayerEvent, ColliderShape, WorldLoopEvent } from 'hytopia'; // Added PlayerInput, PlayerEvent, ColliderShape, WorldLoopEvent
 import { applyImpulse } from '../physics/physicsSystem';
+import { CyberCrawlerController } from './cyberCrawlerController'; // Import the custom controller
 
 // Player movement constants
 const PLAYER_CONSTANTS = {
@@ -25,8 +26,8 @@ interface PlayerState {
   inventory: any[];
 }
 
-// Map to store player states
-const playerStates = new Map<string, PlayerState>();
+// Map to store player states - Exported for use in custom controller
+export const playerStates = new Map<string, PlayerState>();
 
 /**
  * Sets up a player when they join the game
@@ -34,30 +35,39 @@ const playerStates = new Map<string, PlayerState>();
  * @param player The player that joined
  */
 export function setupPlayer(world: World, player: Player): void {
+  // Instantiate the custom controller
+  const controller = new CyberCrawlerController();
+
   // Create player entity
   const playerEntity = new PlayerEntity({
     player,
+    controller, // Assign the custom controller instance
     // Using a cyberpunk-styled model for the player
     modelUri: 'models/characters/cyber_warrior.gltf',
     modelScale: 1.0,
     modelLoopedAnimations: ['idle'],
-    mass: 70, // kg
-    // Add collider slightly smaller than the model for better movement
-    collider: {
-      type: 'capsule',
-      radius: 0.4,
-      height: 1.8,
-      offset: { x: 0, y: 0.9, z: 0 },
+    // Define rigid body options
+    rigidBodyOptions: {
+      // mass: 70, // Removed - TS Error: Property 'mass' does not exist on type 'RigidBodyOptions'.
+      // Define colliders as an array inside rigidBodyOptions
+      colliders: [
+        {
+          shape: ColliderShape.CAPSULE, // Use ColliderShape enum
+          radius: 0.4,
+          halfHeight: 1.0, // Changed from height: 1.8
+          // offset: { x: 0, y: 0.9, z: 0 }, // Removed - TS Error: Property 'offset' does not exist
+          friction: PLAYER_CONSTANTS.GROUND_FRICTION, // Moved friction inside the collider definition
+        }
+      ],
+      // friction: PLAYER_CONSTANTS.GROUND_FRICTION, // Removed from here
     },
-    friction: PLAYER_CONSTANTS.GROUND_FRICTION,
-    // Use a physics-based character controller
-    controllerType: 'physics',
-    controllerConfig: {
-      walkSpeed: PLAYER_CONSTANTS.MOVEMENT_SPEED,
-      sprintSpeed: PLAYER_CONSTANTS.MOVEMENT_SPEED * 1.5,
-      jumpHeight: PLAYER_CONSTANTS.JUMP_FORCE,
-      airControl: PLAYER_CONSTANTS.AIR_CONTROL,
-    },
+    // Removed controllerConfig as it's likely handled by the custom controller or default physics
+    // controllerConfig: {
+    //   walkSpeed: PLAYER_CONSTANTS.MOVEMENT_SPEED,
+    //   sprintSpeed: PLAYER_CONSTANTS.MOVEMENT_SPEED * 1.5,
+    //   jumpHeight: PLAYER_CONSTANTS.JUMP_FORCE,
+    //   airControl: PLAYER_CONSTANTS.AIR_CONTROL,
+    // },
   });
 
   // Initialize player state
@@ -71,23 +81,14 @@ export function setupPlayer(world: World, player: Player): void {
 
   // Setup collision handling
   playerEntity.on(EntityEvent.ENTITY_COLLISION, handlePlayerCollision);
-  
-  // Setup player input handling
-  playerEntity.onPlayerInput(({ input, entity }) => {
-    // Handle dash ability on right-click
-    if (input.mouseRight && canPlayerDash(player.id)) {
-      performDash(entity);
-      const state = playerStates.get(player.id);
-      if (state) {
-        state.lastDashTime = Date.now();
-      }
-    }
-  });
+
+  // Removed incorrect player.on(PlayerEvent.INPUT, ...) handler.
+  // Input handling will be done via the custom CyberCrawlerController.
 
   // Spawn the player at the designated spawn point
   playerEntity.spawn(world, { x: 0, y: 5, z: 0 });
   
-  console.log(`Player ${player.displayName} set up with entity ID: ${playerEntity.id}`);
+  console.log(`Player ${player.id} set up with entity ID: ${playerEntity.id}`); // Changed back to player.id
 }
 
 /**
@@ -104,9 +105,9 @@ function handlePlayerCollision({ entity, otherEntity, impactVelocity, started }:
 }
 
 /**
- * Checks if player can use dash ability based on cooldown
+ * Checks if player can use dash ability based on cooldown - Exported
  */
-function canPlayerDash(playerId: string): boolean {
+export function canPlayerDash(playerId: string): boolean {
   const state = playerStates.get(playerId);
   if (!state) return false;
   
@@ -115,15 +116,15 @@ function canPlayerDash(playerId: string): boolean {
 }
 
 /**
- * Performs a dash in the direction the player is facing
+ * Performs a dash in the direction the player is facing - Exported
  */
-function performDash(entity: PlayerEntity): void {
+export function performDash(entity: PlayerEntity): void {
   const direction = entity.directionFromRotation;
   
   // Apply a strong impulse in the facing direction
-  applyImpulse(entity, direction, PLAYER_CONSTANTS.DASH_FORCE * entity.mass);
+  applyImpulse(entity, direction, PLAYER_CONSTANTS.DASH_FORCE * entity.mass); // Try using entity.mass again
   
-  console.log(`Player ${entity.player.displayName} performed dash`);
+  console.log(`Player ${entity.player.id} performed dash`); // Changed back to entity.player.id
 }
 
 /**
