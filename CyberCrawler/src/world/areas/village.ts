@@ -24,6 +24,7 @@ import {
   placeTree
 } from '../../utils/block-placer';
 import { createPath } from '../terrain';
+import { findGroundHeight } from '../../utils/terrain-utils';
 
 // ====================================
 // Main generation function
@@ -89,18 +90,20 @@ function buildPlaza(world: World): void {
       
       const worldX = centerX + x;
       const worldZ = centerZ + z;
-      
-      // Place stone brick floor
+      const groundY = findGroundHeight(world, worldX, worldZ);
+
+      // Place stone brick floor ON the found ground
       placeBlock(
         world,
-        { x: worldX, y: WORLD_HEIGHT.BASE, z: worldZ },
+        { x: worldX, y: groundY, z: worldZ }, // Use groundY instead of WORLD_HEIGHT.BASE
         BLOCK_TYPES.STONE_BRICK
       );
     }
   }
-  
+
   // Add a central feature (fountain or statue)
-  buildCentralFeature(world, { x: centerX, y: WORLD_HEIGHT.BASE + 1, z: centerZ });
+  const centerGroundY = findGroundHeight(world, centerX, centerZ);
+  buildCentralFeature(world, { x: centerX, y: centerGroundY + 1, z: centerZ }); // Start feature 1 block above ground
 }
 
 /**
@@ -204,11 +207,13 @@ function buildSmallShop(world: World, position: Vector3Like): void {
   // Calculate starting corner
   const startX = position.x - Math.floor(width / 2);
   const startZ = position.z - Math.floor(depth / 2);
-  
+  const groundY = findGroundHeight(world, startX, startZ); // Check one corner
+  const buildingStartY = groundY + 1; // Place building starting 1 block above ground
+
   // Build the main structure
   placeHollowBox(
     world,
-    { x: startX, y: position.y, z: startZ },
+    { x: startX, y: buildingStartY, z: startZ }, // Use buildingStartY
     width,
     height,
     depth,
@@ -218,7 +223,7 @@ function buildSmallShop(world: World, position: Vector3Like): void {
   // Wooden floor
   placeFloor(
     world,
-    { x: startX + 1, y: position.y, z: startZ + 1 },
+    { x: startX + 1, y: buildingStartY, z: startZ + 1 }, // Use buildingStartY
     width - 2,
     depth - 2,
     BLOCK_TYPES.WOOD_PLANKS
@@ -227,26 +232,26 @@ function buildSmallShop(world: World, position: Vector3Like): void {
   // Add a door
   placeBlock(
     world,
-    { x: startX + Math.floor(width / 2), y: position.y + 1, z: startZ },
+    { x: startX + Math.floor(width / 2), y: buildingStartY + 1, z: startZ }, // Use buildingStartY
     BLOCK_TYPES.AIR
   );
-  
+
   placeBlock(
     world,
-    { x: startX + Math.floor(width / 2), y: position.y + 2, z: startZ },
+    { x: startX + Math.floor(width / 2), y: buildingStartY + 2, z: startZ }, // Use buildingStartY
     BLOCK_TYPES.AIR
   );
   
   // Add windows
   for (let x = 2; x < width - 2; x += 2) {
-    addWindow(world, { x: startX + x, y: position.y + 2, z: startZ });
+    addWindow(world, { x: startX + x, y: buildingStartY + 2, z: startZ }); // Use buildingStartY
   }
-  
+
   // Add a simple awning over the entrance
   for (let x = -2; x <= 2; x++) {
     placeBlock(
       world,
-      { x: startX + Math.floor(width / 2) + x, y: position.y + 3, z: startZ - 1 },
+      { x: startX + Math.floor(width / 2) + x, y: buildingStartY + 3, z: startZ - 1 }, // Use buildingStartY
       BLOCK_TYPES.WOOD_PLANKS
     );
   }
@@ -254,7 +259,7 @@ function buildSmallShop(world: World, position: Vector3Like): void {
   // Add a shop counter inside
   placeCuboid(
     world,
-    { x: startX + 2, y: position.y + 1, z: startZ + depth - 3 },
+    { x: startX + 2, y: buildingStartY + 1, z: startZ + depth - 3 }, // Use buildingStartY
     { width: width - 4, height: 1, depth: 1 },
     BLOCK_TYPES.WOOD_PLANKS
   );
@@ -262,7 +267,7 @@ function buildSmallShop(world: World, position: Vector3Like): void {
   // Add a flat roof
   placeFloor(
     world,
-    { x: startX, y: position.y + height, z: startZ },
+    { x: startX, y: buildingStartY + height, z: startZ }, // Use buildingStartY
     width,
     depth,
     BLOCK_TYPES.STONE_BRICK
@@ -284,11 +289,13 @@ function buildVillageHouse(world: World, position: Vector3Like): void {
   // Calculate starting corner
   const startX = position.x - Math.floor(width / 2);
   const startZ = position.z - Math.floor(depth / 2);
-  
+  const groundY = findGroundHeight(world, startX, startZ); // Check one corner
+  const buildingStartY = groundY + 1; // Place building starting 1 block above ground
+
   // Build the main structure
   placeHollowBox(
     world,
-    { x: startX, y: position.y, z: startZ },
+    { x: startX, y: buildingStartY, z: startZ }, // Use buildingStartY
     width,
     height,
     depth,
@@ -298,7 +305,7 @@ function buildVillageHouse(world: World, position: Vector3Like): void {
   // Wooden floor
   placeFloor(
     world,
-    { x: startX + 1, y: position.y, z: startZ + 1 },
+    { x: startX + 1, y: buildingStartY, z: startZ + 1 }, // Use buildingStartY
     width - 2,
     depth - 2,
     BLOCK_TYPES.WOOD_PLANKS
@@ -307,20 +314,20 @@ function buildVillageHouse(world: World, position: Vector3Like): void {
   // Add a door
   const doorX = startX + Math.floor(width / 2);
   const doorZ = startZ + depth; // Door on the side facing away from plaza
-  
-  placeBlock(world, { x: doorX, y: position.y + 1, z: doorZ }, BLOCK_TYPES.AIR);
-  placeBlock(world, { x: doorX, y: position.y + 2, z: doorZ }, BLOCK_TYPES.AIR);
-  
+
+  placeBlock(world, { x: doorX, y: buildingStartY + 1, z: doorZ }, BLOCK_TYPES.AIR); // Use buildingStartY
+  placeBlock(world, { x: doorX, y: buildingStartY + 2, z: doorZ }, BLOCK_TYPES.AIR); // Use buildingStartY
+
   // Add windows
-  addWindow(world, { x: startX, y: position.y + 2, z: startZ + Math.floor(depth / 2) });
-  addWindow(world, { x: startX + width, y: position.y + 2, z: startZ + Math.floor(depth / 2) });
-  
+  addWindow(world, { x: startX, y: buildingStartY + 2, z: startZ + Math.floor(depth / 2) }); // Use buildingStartY
+  addWindow(world, { x: startX + width, y: buildingStartY + 2, z: startZ + Math.floor(depth / 2) }); // Use buildingStartY
+
   // Add sloped roof
   for (let y = 0; y < 3; y++) {
     for (let x = y; x < width - y; x++) {
       placeBlock(
         world,
-        { x: startX + x, y: position.y + height + y, z: startZ + Math.floor(depth / 2) },
+        { x: startX + x, y: buildingStartY + height + y, z: startZ + Math.floor(depth / 2) }, // Use buildingStartY
         BLOCK_TYPES.WOOD_PLANKS
       );
     }
@@ -342,11 +349,13 @@ function buildTallBuilding(world: World, position: Vector3Like): void {
   // Calculate starting corner
   const startX = position.x - Math.floor(width / 2);
   const startZ = position.z - Math.floor(depth / 2);
-  
+  const groundY = findGroundHeight(world, startX, startZ); // Check one corner
+  const buildingStartY = groundY + 1; // Place building starting 1 block above ground
+
   // Build the main structure
   placeHollowBox(
     world,
-    { x: startX, y: position.y, z: startZ },
+    { x: startX, y: buildingStartY, z: startZ }, // Use buildingStartY
     width,
     height,
     depth,
@@ -357,7 +366,7 @@ function buildTallBuilding(world: World, position: Vector3Like): void {
   for (let floorLevel = 4; floorLevel < height; floorLevel += 4) {
     placeFloor(
       world,
-      { x: startX + 1, y: position.y + floorLevel, z: startZ + 1 },
+      { x: startX + 1, y: buildingStartY + floorLevel, z: startZ + 1 }, // Use buildingStartY
       width - 2,
       depth - 2,
       BLOCK_TYPES.WOOD_PLANKS
@@ -367,29 +376,29 @@ function buildTallBuilding(world: World, position: Vector3Like): void {
   // Add a door
   placeBlock(
     world,
-    { x: startX + Math.floor(width / 2), y: position.y + 1, z: startZ },
+    { x: startX + Math.floor(width / 2), y: buildingStartY + 1, z: startZ }, // Use buildingStartY
     BLOCK_TYPES.AIR
   );
   placeBlock(
     world,
-    { x: startX + Math.floor(width / 2), y: position.y + 2, z: startZ },
+    { x: startX + Math.floor(width / 2), y: buildingStartY + 2, z: startZ }, // Use buildingStartY
     BLOCK_TYPES.AIR
   );
   
   // Add windows on each level
   for (let floorLevel = 2; floorLevel < height; floorLevel += 4) {
     // Windows on all four sides
-    addWindow(world, { x: startX, y: position.y + floorLevel, z: startZ + Math.floor(depth / 2) });
-    addWindow(world, { x: startX + width, y: position.y + floorLevel, z: startZ + Math.floor(depth / 2) });
-    addWindow(world, { x: startX + Math.floor(width / 2), y: position.y + floorLevel, z: startZ });
-    addWindow(world, { x: startX + Math.floor(width / 2), y: position.y + floorLevel, z: startZ + depth });
+    addWindow(world, { x: startX, y: buildingStartY + floorLevel, z: startZ + Math.floor(depth / 2) }); // Use buildingStartY
+    addWindow(world, { x: startX + width, y: buildingStartY + floorLevel, z: startZ + Math.floor(depth / 2) }); // Use buildingStartY
+    addWindow(world, { x: startX + Math.floor(width / 2), y: buildingStartY + floorLevel, z: startZ }); // Use buildingStartY
+    addWindow(world, { x: startX + Math.floor(width / 2), y: buildingStartY + floorLevel, z: startZ + depth }); // Use buildingStartY
   }
-  
+
   // Add a spire on top
   for (let y = 0; y < 4; y++) {
     placeBlock(
       world,
-      { x: startX + Math.floor(width / 2), y: position.y + height + y, z: startZ + Math.floor(depth / 2) },
+      { x: startX + Math.floor(width / 2), y: buildingStartY + height + y, z: startZ + Math.floor(depth / 2) }, // Use buildingStartY
       BLOCK_TYPES.LOG
     );
   }
@@ -470,7 +479,8 @@ function addVillageDecorations(world: World): void {
     // Random position within the area
     const posX = startX + Math.floor(Math.random() * area.width);
     const posZ = startZ + Math.floor(Math.random() * area.depth);
-    
+    const groundY = findGroundHeight(world, posX, posZ);
+
     // Skip if too close to the plaza center
     const centerX = startX + area.width / 2;
     const centerZ = startZ + area.depth / 2;
@@ -483,14 +493,14 @@ function addVillageDecorations(world: World): void {
       // Tree
       placeTree(
         world,
-        { x: posX, y: WORLD_HEIGHT.BASE + 1, z: posZ },
+        { x: posX, y: groundY + 1, z: posZ }, // Use groundY + 1
         4, // Trunk height
         BLOCK_TYPES.LOG,
         BLOCK_TYPES.OAK_LEAVES
       );
     } else {
       // Bench
-      buildBench(world, { x: posX, y: WORLD_HEIGHT.BASE, z: posZ });
+      buildBench(world, { x: posX, y: groundY, z: posZ }); // Use groundY
     }
   }
 }

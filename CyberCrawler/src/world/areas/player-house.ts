@@ -24,6 +24,7 @@ import {
   placeTree
 } from '../../utils/block-placer';
 import { createHill, createPath } from '../terrain';
+import { findGroundHeight } from '../../utils/terrain-utils';
 
 // ====================================
 // Main generation function
@@ -115,8 +116,11 @@ function buildMainHouse(world: World): void {
   // Calculate house corner
   const houseStartX = centerX - houseWidth / 2;
   const houseStartZ = centerZ - houseDepth / 2;
-  const houseStartY = WORLD_HEIGHT.BASE + 3; // On top of the hill
-  
+  // Find the actual ground height at the house's center/corner
+  const groundY = findGroundHeight(world, houseStartX, houseStartZ); // Check one corner
+  const houseStartY = groundY + 1; // Place the house starting 1 block above the ground
+  console.log(`Placing player house foundation at Y=${houseStartY} (Ground was Y=${groundY})`);
+
   // Foundation platform
   placeCuboid(
     world,
@@ -347,20 +351,26 @@ function buildGarden(world: World): void {
   // Garden position
   const gardenStartX = startX + 10;
   const gardenStartZ = startZ + 10;
-  const gardenY = WORLD_HEIGHT.BASE + 3; // On the hill
-  
+  // const gardenY = WORLD_HEIGHT.BASE + 3; // On the hill - REMOVED, calculate dynamically
+
   // Place a few trees
+  const tree1X = gardenStartX + 5;
+  const tree1Z = gardenStartZ + 5;
+  const tree1GroundY = findGroundHeight(world, tree1X, tree1Z);
   placeTree(
     world,
-    { x: gardenStartX + 5, y: gardenY, z: gardenStartZ + 5 },
+    { x: tree1X, y: tree1GroundY + 1, z: tree1Z }, // Use groundY + 1
     5, // Trunk height
     BLOCK_TYPES.LOG,
     BLOCK_TYPES.OAK_LEAVES
   );
-  
+
+  const tree2X = gardenStartX + 15;
+  const tree2Z = gardenStartZ + 8;
+  const tree2GroundY = findGroundHeight(world, tree2X, tree2Z);
   placeTree(
     world,
-    { x: gardenStartX + 15, y: gardenY, z: gardenStartZ + 8 },
+    { x: tree2X, y: tree2GroundY + 1, z: tree2Z }, // Use groundY + 1
     4, // Trunk height
     BLOCK_TYPES.LOG,
     BLOCK_TYPES.OAK_LEAVES
@@ -369,14 +379,18 @@ function buildGarden(world: World): void {
   // Small flower garden
   for (let x = 0; x < 5; x++) {
     for (let z = 0; z < 5; z++) {
+      const checkX = gardenStartX + 25 + x;
+      const checkZ = gardenStartZ + 5 + z;
+      const checkGroundY = findGroundHeight(world, checkX, checkZ);
+
       // Alternate grass and stone for a checker pattern
       const blockType = (x + z) % 2 === 0
         ? BLOCK_TYPES.GRASS
         : BLOCK_TYPES.STONE;
-      
+
       placeBlock(
         world,
-        { x: gardenStartX + 25 + x, y: gardenY, z: gardenStartZ + 5 + z },
+        { x: checkX, y: checkGroundY, z: checkZ }, // Use checkGroundY instead of gardenY
         blockType
       );
     }
@@ -399,152 +413,101 @@ function buildFence(world: World): void {
   const fenceWidth = area.width + 10;
   const fenceDepth = area.depth + 10;
   
-  // Find the appropriate Y level based on terrain
-  // For simplicity, we'll use the hill height
-  const fenceY = WORLD_HEIGHT.BASE + 3;
-  
+  // Find the appropriate Y level based on terrain - REMOVED, calculate dynamically
+  // const fenceY = WORLD_HEIGHT.BASE + 3;
+
   // Place fence posts
   const fencePostSpacing = 4;
   
   // North and south fence posts
   for (let x = 0; x < fenceWidth; x += fencePostSpacing) {
-    placeBlock(
-      world,
-      { x: fenceStartX + x, y: fenceY, z: fenceStartZ },
-      BLOCK_TYPES.LOG
-    );
-    
-    placeBlock(
-      world,
-      { x: fenceStartX + x, y: fenceY + 1, z: fenceStartZ },
-      BLOCK_TYPES.LOG
-    );
-    
-    placeBlock(
-      world,
-      { x: fenceStartX + x, y: fenceY, z: fenceStartZ + fenceDepth - 1 },
-      BLOCK_TYPES.LOG
-    );
-    
-    placeBlock(
-      world,
-      { x: fenceStartX + x, y: fenceY + 1, z: fenceStartZ + fenceDepth - 1 },
-      BLOCK_TYPES.LOG
-    );
+    const postX = fenceStartX + x;
+
+    // North Post
+    const postZ_N = fenceStartZ;
+    const postGroundY_N = findGroundHeight(world, postX, postZ_N);
+    placeBlock(world, { x: postX, y: postGroundY_N + 1, z: postZ_N }, BLOCK_TYPES.LOG);
+    placeBlock(world, { x: postX, y: postGroundY_N + 2, z: postZ_N }, BLOCK_TYPES.LOG);
+
+    // South Post
+    const postZ_S = fenceStartZ + fenceDepth - 1;
+    const postGroundY_S = findGroundHeight(world, postX, postZ_S);
+    placeBlock(world, { x: postX, y: postGroundY_S + 1, z: postZ_S }, BLOCK_TYPES.LOG);
+    placeBlock(world, { x: postX, y: postGroundY_S + 2, z: postZ_S }, BLOCK_TYPES.LOG);
   }
-  
+
   // East and west fence posts
   for (let z = fencePostSpacing; z < fenceDepth - fencePostSpacing; z += fencePostSpacing) {
-    placeBlock(
-      world,
-      { x: fenceStartX, y: fenceY, z: fenceStartZ + z },
-      BLOCK_TYPES.LOG
-    );
-    
-    placeBlock(
-      world,
-      { x: fenceStartX, y: fenceY + 1, z: fenceStartZ + z },
-      BLOCK_TYPES.LOG
-    );
-    
-    placeBlock(
-      world,
-      { x: fenceStartX + fenceWidth - 1, y: fenceY, z: fenceStartZ + z },
-      BLOCK_TYPES.LOG
-    );
-    
-    placeBlock(
-      world,
-      { x: fenceStartX + fenceWidth - 1, y: fenceY + 1, z: fenceStartZ + z },
-      BLOCK_TYPES.LOG
-    );
+    const postZ = fenceStartZ + z;
+
+    // West Post
+    const postX_W = fenceStartX;
+    const postGroundY_W = findGroundHeight(world, postX_W, postZ);
+    placeBlock(world, { x: postX_W, y: postGroundY_W + 1, z: postZ }, BLOCK_TYPES.LOG);
+    placeBlock(world, { x: postX_W, y: postGroundY_W + 2, z: postZ }, BLOCK_TYPES.LOG);
+
+    // East Post
+    const postX_E = fenceStartX + fenceWidth - 1;
+    const postGroundY_E = findGroundHeight(world, postX_E, postZ);
+    placeBlock(world, { x: postX_E, y: postGroundY_E + 1, z: postZ }, BLOCK_TYPES.LOG);
+    placeBlock(world, { x: postX_E, y: postGroundY_E + 2, z: postZ }, BLOCK_TYPES.LOG);
   }
-  
+
   // Fence rails
   // North and south fence rails
   for (let x = 0; x < fenceWidth - 1; x++) {
-    placeBlock(
-      world,
-      { x: fenceStartX + x, y: fenceY + 1, z: fenceStartZ },
-      BLOCK_TYPES.WOOD_PLANKS
-    );
-    
-    placeBlock(
-      world,
-      { x: fenceStartX + x, y: fenceY + 1, z: fenceStartZ + fenceDepth - 1 },
-      BLOCK_TYPES.WOOD_PLANKS
-    );
+    const railX = fenceStartX + x;
+
+    // North Rail
+    const railZ_N = fenceStartZ;
+    const railGroundY_N = findGroundHeight(world, railX, railZ_N);
+    placeBlock(world, { x: railX, y: railGroundY_N + 2, z: railZ_N }, BLOCK_TYPES.WOOD_PLANKS);
+
+    // South Rail
+    const railZ_S = fenceStartZ + fenceDepth - 1;
+    const railGroundY_S = findGroundHeight(world, railX, railZ_S);
+    placeBlock(world, { x: railX, y: railGroundY_S + 2, z: railZ_S }, BLOCK_TYPES.WOOD_PLANKS);
   }
-  
+
   // East and west fence rails
   for (let z = 0; z < fenceDepth - 1; z++) {
+    const railZ = fenceStartZ + z;
+
     // Skip the gate area
     if (z >= fenceDepth / 2 - 2 && z <= fenceDepth / 2 + 1) continue;
-    
-    placeBlock(
-      world,
-      { x: fenceStartX, y: fenceY + 1, z: fenceStartZ + z },
-      BLOCK_TYPES.WOOD_PLANKS
-    );
-    
-    placeBlock(
-      world,
-      { x: fenceStartX + fenceWidth - 1, y: fenceY + 1, z: fenceStartZ + z },
-      BLOCK_TYPES.WOOD_PLANKS
-    );
+
+    // West Rail
+    const railX_W = fenceStartX;
+    const railGroundY_W = findGroundHeight(world, railX_W, railZ);
+    placeBlock(world, { x: railX_W, y: railGroundY_W + 2, z: railZ }, BLOCK_TYPES.WOOD_PLANKS);
+
+    // East Rail
+    const railX_E = fenceStartX + fenceWidth - 1;
+    const railGroundY_E = findGroundHeight(world, railX_E, railZ);
+    placeBlock(world, { x: railX_E, y: railGroundY_E + 2, z: railZ }, BLOCK_TYPES.WOOD_PLANKS);
   }
-  
+
   // Add a gate at the south side
-  const gateX = fenceStartX + fenceWidth / 2;
+  const gateCenterX = fenceStartX + fenceWidth / 2; // Renamed from gateX for clarity
   const gateZ = fenceStartZ + fenceDepth - 1;
-  
+
   // Create the gateway structure (fence posts on either side)
-  placeBlock(
-    world,
-    { x: gateX - 2, y: fenceY, z: gateZ },
-    BLOCK_TYPES.LOG
-  );
-  
-  placeBlock(
-    world,
-    { x: gateX - 2, y: fenceY + 1, z: gateZ },
-    BLOCK_TYPES.LOG
-  );
-  
-  placeBlock(
-    world,
-    { x: gateX - 2, y: fenceY + 2, z: gateZ },
-    BLOCK_TYPES.LOG
-  );
-  
-  placeBlock(
-    world,
-    { x: gateX + 1, y: fenceY, z: gateZ },
-    BLOCK_TYPES.LOG
-  );
-  
-  placeBlock(
-    world,
-    { x: gateX + 1, y: fenceY + 1, z: gateZ },
-    BLOCK_TYPES.LOG
-  );
-  
-  placeBlock(
-    world,
-    { x: gateX + 1, y: fenceY + 2, z: gateZ },
-    BLOCK_TYPES.LOG
-  );
-  
-  // Top beam of the gate
-  placeBlock(
-    world,
-    { x: gateX - 1, y: fenceY + 2, z: gateZ },
-    BLOCK_TYPES.WOOD_PLANKS
-  );
-  
-  placeBlock(
-    world,
-    { x: gateX, y: fenceY + 2, z: gateZ },
-    BLOCK_TYPES.WOOD_PLANKS
-  );
+  // Left Gate Post
+  const leftPostX = gateCenterX - 2;
+  const leftPostGroundY = findGroundHeight(world, leftPostX, gateZ);
+  placeBlock(world, { x: leftPostX, y: leftPostGroundY + 1, z: gateZ }, BLOCK_TYPES.LOG);
+  placeBlock(world, { x: leftPostX, y: leftPostGroundY + 2, z: gateZ }, BLOCK_TYPES.LOG);
+  placeBlock(world, { x: leftPostX, y: leftPostGroundY + 3, z: gateZ }, BLOCK_TYPES.LOG);
+
+  // Right Gate Post
+  const rightPostX = gateCenterX + 1;
+  const rightPostGroundY = findGroundHeight(world, rightPostX, gateZ);
+  placeBlock(world, { x: rightPostX, y: rightPostGroundY + 1, z: gateZ }, BLOCK_TYPES.LOG);
+  placeBlock(world, { x: rightPostX, y: rightPostGroundY + 2, z: gateZ }, BLOCK_TYPES.LOG);
+  placeBlock(world, { x: rightPostX, y: rightPostGroundY + 3, z: gateZ }, BLOCK_TYPES.LOG);
+
+  // Top beam of the gate (use the higher of the two post grounds + 3)
+  const gateTopY = Math.max(leftPostGroundY, rightPostGroundY) + 3;
+  placeBlock(world, { x: gateCenterX - 1, y: gateTopY, z: gateZ }, BLOCK_TYPES.WOOD_PLANKS);
+  placeBlock(world, { x: gateCenterX, y: gateTopY, z: gateZ }, BLOCK_TYPES.WOOD_PLANKS);
 }

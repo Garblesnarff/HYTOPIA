@@ -9,8 +9,9 @@
 
 import { Vector3, Vector3Like, World } from 'hytopia';
 import { BLOCK_TYPES } from '../constants/block-types';
-import { WORLD_HEIGHT, TERRAIN_CONFIG } from '../constants/world-config';
+import { WORLD_HEIGHT, TERRAIN_CONFIG, WORLD_AREAS } from '../constants/world-config'; // Added WORLD_AREAS if needed, though not used here
 import { placeBlock } from '../utils/block-placer';
+import { findGroundHeight } from '../utils/terrain-utils'; // Import findGroundHeight
 
 // ====================================
 // Terrain features
@@ -234,17 +235,11 @@ export function createPath(
       for (let w = -halfWidth; w <= halfWidth; w++) {
         const wx = Math.round(x + perpX * w);
         const wz = Math.round(z + perpZ * w);
-        
-        // Find the ground level
-        for (let y = WORLD_HEIGHT.BASE + 5; y >= WORLD_HEIGHT.BASE - 5; y--) {
-          const blockType = world.chunkLattice?.getBlockType({ x: wx, y, z: wz });
-          
-          if (blockType !== BLOCK_TYPES.AIR && blockType !== BLOCK_TYPES.WATER) {
-            // Found ground, place the path block
-            placeBlock(world, { x: wx, y: y + 1, z: wz }, blockTypeId);
-            break;
-          }
-        }
+
+        // Find the ground level using the new utility function
+        const groundY = findGroundHeight(world, wx, wz);
+        // Place path 1 block above ground
+        placeBlock(world, { x: wx, y: groundY + 1, z: wz }, blockTypeId);
       }
     }
     
