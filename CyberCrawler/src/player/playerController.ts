@@ -86,9 +86,15 @@ export function setupPlayer(world: World, player: Player): void {
   // Input handling will be done via the custom CyberCrawlerController.
 
   // Spawn the player at the designated spawn point
-  playerEntity.spawn(world, { x: 0, y: 5, z: 0 });
+  const spawnPosition = { x: 0, y: 2, z: 0 }; // Spawn directly above our test blocks at origin
+  playerEntity.spawn(world, spawnPosition);
   
-  console.log(`Player ${player.id} set up with entity ID: ${playerEntity.id}`); // Changed back to player.id
+  console.log(`Player ${player.id} spawned at position:`, spawnPosition);
+  
+  // Send helpful debug message to player
+  world.chatManager.sendPlayerMessage(player, 'CyberCrawler: Test blocks placed right beneath you!', '#00FF00');
+  world.chatManager.sendPlayerMessage(player, 'Look down and under you to find the blocks we placed!', '#00FF00');
+  world.chatManager.sendPlayerMessage(player, 'Type /help for debug commands', '#00FF00');
 }
 
 /**

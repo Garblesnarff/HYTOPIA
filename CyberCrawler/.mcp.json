@@ -1,0 +1,15 @@
+{
+  "servers": [
+    {
+      "name": "topia-helper",
+      "command": "bunx",
+      "args": [
+        "-y",
+        "topia-mcp@latest",
+        "serve",
+        "--dir",
+        "/Users/rob/Claude/HYTOPIA/CyberCrawler"
+      ]
+    }
+  ]
+}

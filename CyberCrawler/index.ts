@@ -1,26 +1,11 @@
 /**
- * HYTOPIA SDK Boilerplate
+ * CyberCrawler Game Entry Point
  * 
- * This is a simple boilerplate to get started on your project.
- * It implements the bare minimum to be able to run and connect
- * to your game server and run around as the basic player entity.
+ * This is the main entry point for the CyberCrawler game.
+ * It initializes the world, generates the terrain and structures,
+ * and sets up event handlers for player interactions.
  * 
- * From here you can begin to implement your own game logic
- * or do whatever you want!
- * 
- * You can find documentation here: https://github.com/hytopiagg/sdk/blob/main/docs/server.md
- * 
- * For more in-depth examples, check out the examples folder in the SDK, or you
- * can find it directly on GitHub: https://github.com/hytopiagg/sdk/tree/main/examples/payload-game
- * 
- * You can officially report bugs or request features here: https://github.com/hytopiagg/sdk/issues
- * 
- * To get help, have found a bug, or want to chat with
- * other HYTOPIA devs, join our Discord server:
- * https://discord.gg/DXCXJbHSJX
- * 
- * Official SDK Github repo: https://github.com/hytopiagg/sdk
- * Official SDK NPM Package: https://www.npmjs.com/package/hytopia
+ * @author CyberCrawler Team
  */
 
 import {
@@ -30,68 +15,54 @@ import {
   PlayerEvent,
 } from 'hytopia';
 
+// Import our world generation code
+import { generateWorldMap } from './src/world/world-map';
+import { PLAYER_CONFIG } from './src/constants/world-config';
+
+// We'll keep the map import as a fallback
 import worldMap from './assets/map.json';
 
 /**
- * startServer is always the entry point for our game.
- * It accepts a single function where we should do any
- * setup necessary for our game. The init function is
- * passed a World instance which is the default
- * world created by the game server on startup.
- * 
- * Documentation: https://github.com/hytopiagg/sdk/blob/main/docs/server.startserver.md
+ * Start the CyberCrawler game server
  */
-
 startServer(world => {
-  /**
-   * Enable debug rendering of the physics simulation.
-   * This will overlay lines in-game representing colliders,
-   * rigid bodies, and raycasts. This is useful for debugging
-   * physics-related issues in a development environment.
-   * Enabling this can cause performance issues, which will
-   * be noticed as dropped frame rates and higher RTT times.
-   * It is intended for development environments only and
-   * debugging physics.
-   */
+  console.log('Starting CyberCrawler server...');
   
-  // world.simulation.enableDebugRendering(true);
+  // Use our programmatic world generation instead of loading from JSON
+  try {
+    console.log('Generating world map...');
+    generateWorldMap(world);
+    console.log('World generation complete!');
+  } catch (error) {
+    console.error('Error generating world map:', error);
+    console.log('Falling back to JSON map...');
+    world.loadMap(worldMap);
+  }
 
   /**
-   * Load our map.
-   * You can build your own map using https://build.hytopia.com
-   * After building, hit export and drop the .json file in
-   * the assets folder as map.json.
-   */
-  world.loadMap(worldMap);
-
-  /**
-   * Handle player joining the game. The PlayerEvent.JOINED_WORLD
-   * event is emitted to the world when a new player connects to
-   * the game. From here, we create a basic player
-   * entity instance which automatically handles mapping
-   * their inputs to control their in-game entity and
-   * internally uses our player entity controller.
-   * 
-   * The HYTOPIA SDK is heavily driven by events, you
-   * can find documentation on how the event system works,
-   * here: https://dev.hytopia.com/sdk-guides/events
+   * Handle player joining the game
    */
   world.on(PlayerEvent.JOINED_WORLD, ({ player }) => {
     const playerEntity = new PlayerEntity({
       player,
       name: 'Player',
       modelUri: 'models/players/player.gltf',
-      modelLoopedAnimations: [ 'idle' ],
+      modelLoopedAnimations: ['idle'],
       modelScale: 0.5,
     });
-  
-    playerEntity.spawn(world, { x: 0, y: 10, z: 0 });
+    
+    // Spawn the player at the designated spawn location
+    playerEntity.spawn(world, { 
+      x: PLAYER_CONFIG.SPAWN_POSITION.X, 
+      y: PLAYER_CONFIG.SPAWN_POSITION.Y, 
+      z: PLAYER_CONFIG.SPAWN_POSITION.Z 
+    });
 
     // Load our game UI for this player
     player.ui.load('ui/index.html');
 
-    // Send a nice welcome message that only the player who joined will see ;)
-    world.chatManager.sendPlayerMessage(player, 'Welcome to the game!', '00FF00');
+    // Send welcome messages
+    world.chatManager.sendPlayerMessage(player, 'Welcome to CyberCrawler!', '00FF00');
     world.chatManager.sendPlayerMessage(player, 'Use WASD to move around.');
     world.chatManager.sendPlayerMessage(player, 'Press space to jump.');
     world.chatManager.sendPlayerMessage(player, 'Hold shift to sprint.');
@@ -99,27 +70,14 @@ startServer(world => {
   });
 
   /**
-   * Handle player leaving the game. The PlayerEvent.LEFT_WORLD
-   * event is emitted to the world when a player leaves the game.
-   * Because HYTOPIA is not opinionated on join and
-   * leave game logic, we are responsible for cleaning
-   * up the player and any entities associated with them
-   * after they leave. We can easily do this by 
-   * getting all the known PlayerEntity instances for
-   * the player who left by using our world's EntityManager
-   * instance.
-   * 
-   * The HYTOPIA SDK is heavily driven by events, you
-   * can find documentation on how the event system works,
-   * here: https://dev.hytopia.com/sdk-guides/events
+   * Handle player leaving the game
    */
   world.on(PlayerEvent.LEFT_WORLD, ({ player }) => {
     world.entityManager.getPlayerEntitiesByPlayer(player).forEach(entity => entity.despawn());
   });
 
   /**
-   * A silly little easter egg command. When a player types
-   * "/rocket" in the game, they'll get launched into the air!
+   * Rocket command - launch player into the air
    */
   world.chatManager.registerCommand('/rocket', player => {
     world.entityManager.getPlayerEntitiesByPlayer(player).forEach(entity => {
@@ -128,13 +86,13 @@ startServer(world => {
   });
 
   /**
-   * Play some peaceful ambient music to
-   * set the mood!
+   * Play ambient background music
    */
-  
   new Audio({
     uri: 'audio/music/hytopia-main.mp3',
     loop: true,
     volume: 0.1,
   }).play(world);
+  
+  console.log('CyberCrawler server started successfully!');
 });
