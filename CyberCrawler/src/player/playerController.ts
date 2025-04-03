@@ -3,9 +3,11 @@
  * Handles player movement, physics interactions, and abilities
  */
 
-import { World, Player, PlayerEntity, EntityEvent, Vector3, PlayerInput, PlayerEvent, ColliderShape, WorldLoopEvent } from 'hytopia'; // Added PlayerInput, PlayerEvent, ColliderShape, WorldLoopEvent
+import { World, Player, PlayerEntity, EntityEvent, Vector3, PlayerInput, PlayerEvent, ColliderShape, WorldLoopEvent, PlayerCameraMode } from 'hytopia'; // Added PlayerCameraMode
 import { applyImpulse } from '../physics/physicsSystem';
-import { CyberCrawlerController } from './cyberCrawlerController'; // Import the custom controller
+import { CyberCrawlerController } from './cyberCrawlerController';
+import { PLAYER_CONFIG } from '../constants/world-config'; // Import player config for spawn point
+import { findGroundHeight } from '../utils/terrain-utils'; // Import ground finding utility
 
 // Player movement constants
 const PLAYER_CONSTANTS = {
@@ -85,11 +87,21 @@ export function setupPlayer(world: World, player: Player): void {
   // Removed incorrect player.on(PlayerEvent.INPUT, ...) handler.
   // Input handling will be done via the custom CyberCrawlerController.
 
-  // Spawn the player at the designated spawn point
-  const spawnPosition = { x: 0, y: 2, z: 0 }; // Spawn directly above our test blocks at origin
+  // --- Start: Explicit Camera Setup for Diagnostics ---
+  console.log("Setting camera to THIRD_PERSON for diagnostics...");
+  player.camera.setMode(PlayerCameraMode.THIRD_PERSON);
+  player.camera.setOffset({ x: 0, y: 2, z: -5 }); // Standard behind-and-above offset
+  // --- End: Explicit Camera Setup ---
+
+  // Determine the actual spawn position based on config and ground height
+  const configSpawn = PLAYER_CONFIG.SPAWN_POSITION;
+  const groundY = findGroundHeight(world, configSpawn.X, configSpawn.Z);
+  const spawnPosition = { x: configSpawn.X, y: groundY + 1, z: configSpawn.Z };
+
+  // Spawn the player entity at the calculated position
   playerEntity.spawn(world, spawnPosition);
-  
-  console.log(`Player ${player.id} spawned at position:`, spawnPosition);
+
+  console.log(`Player ${player.id} spawned at configured position adjusted for ground height:`, spawnPosition, `(Ground was Y=${groundY})`);
   
   // Send helpful debug message to player
   world.chatManager.sendPlayerMessage(player, 'CyberCrawler: Test blocks placed right beneath you!', '#00FF00');

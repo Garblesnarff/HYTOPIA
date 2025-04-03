@@ -46,16 +46,16 @@ export const WORLD_ORIGIN = {
 export const WORLD_AREAS = {
   VILLAGE_CENTER: {
     name: "Village Center",
-    startX: -50,
-    startZ: -50,
+    startX: 200, // Centered on map (0,0 absolute -> 200,200 relative)
+    startZ: 200, // Centered on map (0,0 absolute -> 200,200 relative)
     width: 100,
     depth: 100
   },
-  
+
   PLAYER_HOUSE: {
     name: "Player House",
-    startX: 100,
-    startZ: -80,
+    startX: 375, // 75 blocks East of Village edge (Absolute X=125 -> 375 relative)
+    startZ: 225, // Centered vertically relative to village (Absolute Z=-25 -> 225 relative)
     width: 50,
     depth: 50
   },
@@ -115,8 +115,8 @@ export const TERRAIN_CONFIG = {
  */
 export const PLAYER_CONFIG = {
   SPAWN_POSITION: {
-    X: WORLD_AREAS.PLAYER_HOUSE.startX + 25,
-    Y: WORLD_HEIGHT.BASE + 1,
-    Z: WORLD_AREAS.PLAYER_HOUSE.startZ + 25
+    X: 120,
+    Y: WORLD_HEIGHT.BASE + 3, // Y is adjusted by setupPlayer using findGroundHeight
+    Z: 0
   }
 };
