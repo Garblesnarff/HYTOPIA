@@ -42,7 +42,10 @@ export const BLOCK_TYPES = {
   INFECTED_SHADOW: 10,
   
   // Liquids
-  WATER: 22
+  WATER: 22,
+
+  // Resources / Special
+  SCRAP_METAL: 100 // Placeholder ID, confirm if this is correct
 };
 
 /**
@@ -88,6 +91,7 @@ export const BLOCK_CATEGORIES = {
   ],
   
   RESOURCE: [
-    BLOCK_TYPES.DIAMOND_ORE
+    BLOCK_TYPES.DIAMOND_ORE,
+    BLOCK_TYPES.SCRAP_METAL // Added Scrap Metal
   ]
 };
