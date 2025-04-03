@@ -354,27 +354,39 @@ function buildGarden(world: World): void {
   // const gardenY = WORLD_HEIGHT.BASE + 3; // On the hill - REMOVED, calculate dynamically
 
   // Place a few trees
+  // Tree 1
   const tree1X = gardenStartX + 5;
   const tree1Z = gardenStartZ + 5;
   const tree1GroundY = findGroundHeight(world, tree1X, tree1Z);
-  placeTree(
-    world,
-    { x: tree1X, y: tree1GroundY + 1, z: tree1Z }, // Use groundY + 1
-    5, // Trunk height
-    BLOCK_TYPES.LOG,
-    BLOCK_TYPES.OAK_LEAVES
-  );
+  const tree1GroundBlockId = world.chunkLattice.getBlockId({ x: tree1X, y: tree1GroundY, z: tree1Z });
+  const tree1SpaceAboveId = world.chunkLattice.getBlockId({ x: tree1X, y: tree1GroundY + 1, z: tree1Z });
 
+  if ((tree1GroundBlockId === BLOCK_TYPES.GRASS || tree1GroundBlockId === BLOCK_TYPES.DIRT) && tree1SpaceAboveId === BLOCK_TYPES.AIR) {
+    placeTree(
+      world,
+      { x: tree1X, y: tree1GroundY + 1, z: tree1Z }, // Start tree one block above ground
+      5, // Trunk height
+      BLOCK_TYPES.LOG,
+      BLOCK_TYPES.OAK_LEAVES
+    );
+  }
+
+  // Tree 2
   const tree2X = gardenStartX + 15;
   const tree2Z = gardenStartZ + 8;
   const tree2GroundY = findGroundHeight(world, tree2X, tree2Z);
-  placeTree(
-    world,
-    { x: tree2X, y: tree2GroundY + 1, z: tree2Z }, // Use groundY + 1
-    4, // Trunk height
-    BLOCK_TYPES.LOG,
-    BLOCK_TYPES.OAK_LEAVES
-  );
+  const tree2GroundBlockId = world.chunkLattice.getBlockId({ x: tree2X, y: tree2GroundY, z: tree2Z });
+  const tree2SpaceAboveId = world.chunkLattice.getBlockId({ x: tree2X, y: tree2GroundY + 1, z: tree2Z });
+
+  if ((tree2GroundBlockId === BLOCK_TYPES.GRASS || tree2GroundBlockId === BLOCK_TYPES.DIRT) && tree2SpaceAboveId === BLOCK_TYPES.AIR) {
+    placeTree(
+      world,
+      { x: tree2X, y: tree2GroundY + 1, z: tree2Z }, // Start tree one block above ground
+      4, // Trunk height
+      BLOCK_TYPES.LOG,
+      BLOCK_TYPES.OAK_LEAVES
+    );
+  }
   
   // Small flower garden
   for (let x = 0; x < 5; x++) {

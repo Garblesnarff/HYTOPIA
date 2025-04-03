@@ -488,19 +488,26 @@ function addVillageDecorations(world: World): void {
     
     if (distFromCenter < 25) continue;
     
+    // Check if the ground is suitable for a tree and the space above is clear
+    const groundBlockId = world.chunkLattice.getBlockId({ x: posX, y: groundY, z: posZ });
+    const spaceAboveId = world.chunkLattice.getBlockId({ x: posX, y: groundY + 1, z: posZ });
+
+    const isSuitableGround = groundBlockId === BLOCK_TYPES.GRASS || groundBlockId === BLOCK_TYPES.DIRT;
+    const isSpaceClear = spaceAboveId === BLOCK_TYPES.AIR;
+
     // Place either a tree or a bench
-    if (Math.random() < 0.7) {
+    if (Math.random() < 0.7 && isSuitableGround && isSpaceClear) {
       // Tree
       placeTree(
         world,
-        { x: posX, y: groundY + 1, z: posZ }, // Use groundY + 1
+        { x: posX, y: groundY + 1, z: posZ }, // Start tree one block above ground
         4, // Trunk height
         BLOCK_TYPES.LOG,
         BLOCK_TYPES.OAK_LEAVES
       );
-    } else {
+    } else if (isSuitableGround) { // Only place bench on suitable ground too
       // Bench
-      buildBench(world, { x: posX, y: groundY, z: posZ }); // Use groundY
+      buildBench(world, { x: posX, y: groundY, z: posZ }); // Place bench on the ground
     }
   }
 }
