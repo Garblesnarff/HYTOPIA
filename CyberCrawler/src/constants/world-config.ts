@@ -115,8 +115,8 @@ export const TERRAIN_CONFIG = {
  */
 export const PLAYER_CONFIG = {
   SPAWN_POSITION: {
-    X: 120,
+    X: 150,
     Y: WORLD_HEIGHT.BASE + 3, // Y is adjusted by setupPlayer using findGroundHeight
-    Z: 0
+    Z: 31
   }
 };
