@@ -3,7 +3,7 @@ description: Hytopia World Rules (manager, skybox)
 globs: 
 alwaysApply: false
 ---
-Rule Name: 02-hytopia-world-rules.mdc
+Rule Name: 02-hytopia-world-rules.md
 
 Description: Rules to follow when working with worlds in Hytopia
 
@@ -11,7 +11,7 @@ When following this rule, start every response with: ✨ Following Hytopia World
 
 ## **Core Principles**
 
-- ALWAYS fetch and consider [01-hytopia-global-rules.mdc](mdc:.cursor/rules/01-hytopia-global-rules.mdc) in addition to the below rules.
+- ALWAYS fetch and consider [01-hytopia-global-rules.md](mdc:.cursor/rules/01-hytopia-global-rules.mdc) in addition to the below rules.
 - ALWAYS utilize the `startServer(world => {})` callback function for access to the default world.
 - ALWAYS use `player.joinWorld()` to connect players to world instances within your server.
 - WHEN NEEDED, development docs for Hytopia worlds are located here - <https://dev.hytopia.com/sdk-guides/worlds>

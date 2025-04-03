@@ -14,14 +14,17 @@ import { BLOCK_TYPES } from '../../constants/block-types';
 import { WORLD_AREAS, WORLD_ORIGIN, WORLD_HEIGHT } from '../../constants/world-config';
 
 // Utilities
-import { 
-  placeBlock, 
-  placeCuboid, 
-  placeFloor, 
-  placeHollowBox, 
-  placeXWall, 
+import {
+  placeBlock,
+  placeCuboid,
+  placeFloor,
+  placeHollowBox,
+  placeXWall,
   placeZWall,
-  placeTree
+  placeTree,
+  placeDetailedDoor,    // Added import
+  placeDetailedWindow,  // Added import
+  placePitchedRoof      // Added import
 } from '../../utils/block-placer';
 import { createHill, createPath } from '../terrain';
 import { findGroundHeight } from '../../utils/terrain-utils';
@@ -71,18 +74,22 @@ export function buildPlayerHouse(world: World): void {
     z: startZ + area.depth / 2
   };
   
+  // Find ground height for path start/end dynamically
+  const pathStartY = findGroundHeight(world, houseCenter.x, startZ + area.depth - 5) + 1;
+  const pathEndY = findGroundHeight(world, houseCenter.x, startZ + area.depth + 10) + 1;
+
   createPath(
     world,
-    // From the house door
+    // From near the house door
     { 
       x: houseCenter.x, 
-      y: WORLD_HEIGHT.BASE + 4, 
+      y: pathStartY, 
       z: startZ + area.depth - 5 
     },
     // To the edge of the property
     { 
       x: houseCenter.x, 
-      y: WORLD_HEIGHT.BASE + 1, 
+      y: pathEndY, 
       z: startZ + area.depth + 10 
     },
     3, // Width
@@ -155,126 +162,50 @@ function buildMainHouse(world: World): void {
     houseDepth - 2,
     BLOCK_TYPES.WOOD_PLANKS
   );
-  
-  // Add a door
+
+  // Add a detailed door (door faces +Z, wall runs E-W, orientation 'north')
   const doorX = centerX;
-  const doorZ = houseStartZ + houseDepth;
-  placeBlock(world, { x: doorX, y: houseStartY + 1, z: doorZ }, BLOCK_TYPES.AIR);
-  placeBlock(world, { x: doorX, y: houseStartY + 2, z: doorZ }, BLOCK_TYPES.AIR);
-  
-  // Add windows
-  // Front windows
-  addWindow(world, { x: doorX - 3, y: houseStartY + 2, z: doorZ });
-  addWindow(world, { x: doorX + 3, y: houseStartY + 2, z: doorZ });
-  
-  // Side windows
-  addWindow(world, { x: houseStartX, y: houseStartY + 2, z: centerZ });
-  addWindow(world, { x: houseStartX + houseWidth, y: houseStartY + 2, z: centerZ });
-  
-  // Back windows
-  addWindow(world, { x: doorX - 3, y: houseStartY + 2, z: houseStartZ });
-  addWindow(world, { x: doorX + 3, y: houseStartY + 2, z: houseStartZ });
-  
-  // Add a roof
-  buildRoof(
+  const doorZ = houseStartZ + houseDepth - 1; // Wall is at max Z, opening is at max Z
+  placeDetailedDoor(
     world,
-    { x: houseStartX - 1, y: houseStartY + houseHeight, z: houseStartZ - 1 },
-    houseWidth + 2,
-    houseDepth + 2
+    { x: doorX, y: houseStartY - 1, z: doorZ }, // Position is floor block *under* opening
+    'north', // Wall runs E-W, door faces +Z
+    BLOCK_TYPES.LOG // Frame material
+  );
+
+  // Add detailed windows (2x2 size)
+  const windowY = houseStartY + 1; // Bottom of window opening is 1 block above floor
+  // Front windows (fixed Z = doorZ, wall runs along X)
+  placeDetailedWindow(world, { x: doorX - 4, y: windowY, z: doorZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
+  placeDetailedWindow(world, { x: doorX + 2, y: windowY, z: doorZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
+
+  // Side windows (fixed X, wall runs along Z)
+  placeDetailedWindow(world, { x: houseStartX, y: windowY, z: centerZ - 1 }, 2, 2, 'z', BLOCK_TYPES.LOG);
+  placeDetailedWindow(world, { x: houseStartX + houseWidth - 1, y: windowY, z: centerZ - 1 }, 2, 2, 'z', BLOCK_TYPES.LOG);
+
+  // Back windows (fixed Z = houseStartZ, wall runs along X)
+  placeDetailedWindow(world, { x: doorX - 4, y: windowY, z: houseStartZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
+  placeDetailedWindow(world, { x: doorX + 2, y: windowY, z: houseStartZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
+
+  // Add a pitched roof
+  placePitchedRoof(
+    world,
+    { x: houseStartX, y: houseStartY + houseHeight, z: houseStartZ }, // Start at top of walls
+    houseWidth,
+    houseDepth,
+    BLOCK_TYPES.WOOD_PLANKS, // Roof material
+    BLOCK_TYPES.STONE_BRICK, // Eave material
+    BLOCK_TYPES.BRICK, // Gable material (match walls)
+    1 // Overhang
   );
   
   // Add interior features
   buildInterior(world, { x: houseStartX, y: houseStartY, z: houseStartZ }, houseWidth, houseDepth);
 }
 
-/**
- * Adds a window at the specified position
- * 
- * @param {World} world - The game world
- * @param {Vector3Like} position - Position for the center of the window
- */
-function addWindow(world: World, position: Vector3Like): void {
-  // Create a 2x2 window centered on the position
-  for (let x = -1; x <= 0; x++) {
-    for (let y = -1; y <= 0; y++) {
-      placeBlock(
-        world, 
-        { 
-          x: position.x + x, 
-          y: position.y + y, 
-          z: position.z 
-        }, 
-        BLOCK_TYPES.GLASS
-      );
-    }
-  }
-}
+// Removed old addWindow function
 
-/**
- * Builds a simple pitched roof
- * 
- * @param {World} world - The game world
- * @param {Vector3Like} startPos - Starting corner position
- * @param {number} width - Width of the roof
- * @param {number} depth - Depth of the roof
- */
-function buildRoof(
-  world: World,
-  startPos: Vector3Like,
-  width: number,
-  depth: number
-): void {
-  const roofBlock = BLOCK_TYPES.STONE_BRICK;
-  const roofHeight = 4;
-  
-  // Build the sides of the roof that slope up
-  for (let y = 0; y < roofHeight; y++) {
-    // Calculate width reduction for this level
-    const reduction = y + 1;
-    
-    // Place the outline of the roof at this level
-    for (let x = reduction; x < width - reduction; x++) {
-      placeBlock(
-        world,
-        { x: startPos.x + x, y: startPos.y + y, z: startPos.z },
-        roofBlock
-      );
-      
-      placeBlock(
-        world,
-        { x: startPos.x + x, y: startPos.y + y, z: startPos.z + depth - 1 },
-        roofBlock
-      );
-    }
-    
-    for (let z = 1; z < depth - 1; z++) {
-      placeBlock(
-        world,
-        { x: startPos.x + reduction, y: startPos.y + y, z: startPos.z + z },
-        roofBlock
-      );
-      
-      placeBlock(
-        world,
-        { x: startPos.x + width - reduction - 1, y: startPos.y + y, z: startPos.z + z },
-        roofBlock
-      );
-    }
-    
-    // Fill in the top of the roof
-    if (y == roofHeight - 1) {
-      for (let x = reduction; x < width - reduction; x++) {
-        for (let z = reduction; z < depth - reduction; z++) {
-          placeBlock(
-            world,
-            { x: startPos.x + x, y: startPos.y + y, z: startPos.z + z },
-            roofBlock
-          );
-        }
-      }
-    }
-  }
-}
+// Removed old buildRoof function
 
 /**
  * Builds interior features for the house

@@ -238,8 +238,15 @@ export function createPath(
 
         // Find the ground level using the new utility function
         const groundY = findGroundHeight(world, wx, wz);
-        // Place path block AT ground level, replacing the existing block
-        placeBlock(world, { x: wx, y: groundY, z: wz }, blockTypeId);
+        
+        // Check if the space directly above the path location is empty
+        const spaceAboveId = world.chunkLattice.getBlockId({ x: wx, y: groundY + 1, z: wz });
+        
+        // Only place the path block if the space above is AIR (to avoid undercutting buildings)
+        if (spaceAboveId === BLOCK_TYPES.AIR) {
+          // Place path block AT ground level, replacing the existing block
+          placeBlock(world, { x: wx, y: groundY, z: wz }, blockTypeId);
+        }
       }
     }
     

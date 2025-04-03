@@ -14,14 +14,17 @@ import { BLOCK_TYPES } from '../../constants/block-types';
 import { WORLD_AREAS, WORLD_ORIGIN, WORLD_HEIGHT } from '../../constants/world-config';
 
 // Utilities
-import { 
-  placeBlock, 
-  placeCuboid, 
-  placeFloor, 
-  placeHollowBox, 
-  placeXWall, 
+import {
+  placeBlock,
+  placeCuboid,
+  placeFloor,
+  placeHollowBox,
+  placeXWall,
   placeZWall,
-  placeTree
+  placeTree,
+  placeDetailedDoor,    // Added import
+  placeDetailedWindow,  // Added import
+  placePitchedRoof      // Added import
 } from '../../utils/block-placer';
 import { createPath } from '../terrain';
 import { findGroundHeight } from '../../utils/terrain-utils';
@@ -228,24 +231,35 @@ function buildSmallShop(world: World, position: Vector3Like): void {
     depth - 2,
     BLOCK_TYPES.WOOD_PLANKS
   );
-  
-  // Add a door
-  placeBlock(
+
+  // Add a detailed door (door faces -Z, wall runs E-W, orientation 'south')
+  placeDetailedDoor(
     world,
-    { x: startX + Math.floor(width / 2), y: buildingStartY + 1, z: startZ }, // Use buildingStartY
-    BLOCK_TYPES.AIR
+    { x: startX + Math.floor(width / 2), y: buildingStartY -1, z: startZ }, // Position is floor block *under* opening
+    'south', // Wall runs E-W, door faces -Z
+    BLOCK_TYPES.LOG // Frame material
   );
 
-  placeBlock(
+  // Add detailed windows (2x2 size) on the front wall (fixed Z)
+  // Assuming window bottom-left is at y+1 relative to buildingStartY
+  placeDetailedWindow(
     world,
-    { x: startX + Math.floor(width / 2), y: buildingStartY + 2, z: startZ }, // Use buildingStartY
-    BLOCK_TYPES.AIR
+    { x: startX + 2, y: buildingStartY + 1, z: startZ }, // Bottom-left of opening
+    2, // Width
+    2, // Height
+    'x', // Wall runs along X axis
+    BLOCK_TYPES.LOG, // Frame material
+    BLOCK_TYPES.GLASS // Glass material
   );
-  
-  // Add windows
-  for (let x = 2; x < width - 2; x += 2) {
-    addWindow(world, { x: startX + x, y: buildingStartY + 2, z: startZ }); // Use buildingStartY
-  }
+  placeDetailedWindow(
+    world,
+    { x: startX + width - 4, y: buildingStartY + 1, z: startZ }, // Bottom-left of opening
+    2, // Width
+    2, // Height
+    'x', // Wall runs along X axis
+    BLOCK_TYPES.LOG, // Frame material
+    BLOCK_TYPES.GLASS // Glass material
+  );
 
   // Add a simple awning over the entrance
   for (let x = -2; x <= 2; x++) {
@@ -263,14 +277,17 @@ function buildSmallShop(world: World, position: Vector3Like): void {
     { width: width - 4, height: 1, depth: 1 },
     BLOCK_TYPES.WOOD_PLANKS
   );
-  
-  // Add a flat roof
-  placeFloor(
+
+  // Add a pitched roof instead of flat
+  placePitchedRoof(
     world,
-    { x: startX, y: buildingStartY + height, z: startZ }, // Use buildingStartY
+    { x: startX, y: buildingStartY + height, z: startZ }, // Start at top of walls
     width,
     depth,
-    BLOCK_TYPES.STONE_BRICK
+    BLOCK_TYPES.WOOD_PLANKS, // Roof material
+    BLOCK_TYPES.STONE_BRICK, // Eave material
+    BLOCK_TYPES.CLAY, // Gable material (match walls)
+    1 // Overhang
   );
 }
 
@@ -310,28 +327,51 @@ function buildVillageHouse(world: World, position: Vector3Like): void {
     depth - 2,
     BLOCK_TYPES.WOOD_PLANKS
   );
-  
-  // Add a door
+
+  // Add a detailed door (door faces +Z, wall runs E-W, orientation 'north')
   const doorX = startX + Math.floor(width / 2);
-  const doorZ = startZ + depth; // Door on the side facing away from plaza
+  const doorZ = startZ + depth - 1; // Wall is at max Z, opening is at max Z
+  placeDetailedDoor(
+    world,
+    { x: doorX, y: buildingStartY - 1, z: doorZ }, // Position is floor block *under* opening
+    'north', // Wall runs E-W, door faces +Z
+    BLOCK_TYPES.LOG // Frame material
+  );
 
-  placeBlock(world, { x: doorX, y: buildingStartY + 1, z: doorZ }, BLOCK_TYPES.AIR); // Use buildingStartY
-  placeBlock(world, { x: doorX, y: buildingStartY + 2, z: doorZ }, BLOCK_TYPES.AIR); // Use buildingStartY
+  // Add detailed windows (2x2 size) on side walls (fixed X)
+  // Assuming window bottom-left is at y+1 relative to buildingStartY
+  // West wall window
+  placeDetailedWindow(
+    world,
+    { x: startX, y: buildingStartY + 1, z: startZ + Math.floor(depth / 2) -1 }, // Bottom-left of opening
+    2, // Width (along Z)
+    2, // Height
+    'z', // Wall runs along Z axis
+    BLOCK_TYPES.LOG, // Frame material
+    BLOCK_TYPES.GLASS // Glass material
+  );
+  // East wall window
+  placeDetailedWindow(
+    world,
+    { x: startX + width - 1, y: buildingStartY + 1, z: startZ + Math.floor(depth / 2) -1 }, // Bottom-left of opening
+    2, // Width (along Z)
+    2, // Height
+    'z', // Wall runs along Z axis
+    BLOCK_TYPES.LOG, // Frame material
+    BLOCK_TYPES.GLASS // Glass material
+  );
 
-  // Add windows
-  addWindow(world, { x: startX, y: buildingStartY + 2, z: startZ + Math.floor(depth / 2) }); // Use buildingStartY
-  addWindow(world, { x: startX + width, y: buildingStartY + 2, z: startZ + Math.floor(depth / 2) }); // Use buildingStartY
-
-  // Add sloped roof
-  for (let y = 0; y < 3; y++) {
-    for (let x = y; x < width - y; x++) {
-      placeBlock(
-        world,
-        { x: startX + x, y: buildingStartY + height + y, z: startZ + Math.floor(depth / 2) }, // Use buildingStartY
-        BLOCK_TYPES.WOOD_PLANKS
-      );
-    }
-  }
+  // Add pitched roof
+  placePitchedRoof(
+    world,
+    { x: startX, y: buildingStartY + height, z: startZ }, // Start at top of walls
+    width,
+    depth,
+    BLOCK_TYPES.WOOD_PLANKS, // Roof material
+    BLOCK_TYPES.STONE_BRICK, // Eave material
+    BLOCK_TYPES.BRICK, // Gable material (match walls)
+    1 // Overhang
+  );
 }
 
 /**
@@ -373,59 +413,88 @@ function buildTallBuilding(world: World, position: Vector3Like): void {
     );
   }
   
-  // Add a door
-  placeBlock(
+  // Add a detailed door (door faces -Z, wall runs E-W, orientation 'south')
+  placeDetailedDoor(
     world,
-    { x: startX + Math.floor(width / 2), y: buildingStartY + 1, z: startZ }, // Use buildingStartY
-    BLOCK_TYPES.AIR
-  );
-  placeBlock(
-    world,
-    { x: startX + Math.floor(width / 2), y: buildingStartY + 2, z: startZ }, // Use buildingStartY
-    BLOCK_TYPES.AIR
+    { x: startX + Math.floor(width / 2), y: buildingStartY - 1, z: startZ }, // Position is floor block *under* opening
+    'south', // Wall runs E-W, door faces -Z
+    BLOCK_TYPES.LOG // Frame material
   );
   
-  // Add windows on each level
-  for (let floorLevel = 2; floorLevel < height; floorLevel += 4) {
-    // Windows on all four sides
-    addWindow(world, { x: startX, y: buildingStartY + floorLevel, z: startZ + Math.floor(depth / 2) }); // Use buildingStartY
-    addWindow(world, { x: startX + width, y: buildingStartY + floorLevel, z: startZ + Math.floor(depth / 2) }); // Use buildingStartY
-    addWindow(world, { x: startX + Math.floor(width / 2), y: buildingStartY + floorLevel, z: startZ }); // Use buildingStartY
-    addWindow(world, { x: startX + Math.floor(width / 2), y: buildingStartY + floorLevel, z: startZ + depth }); // Use buildingStartY
-  }
-
-  // Add a spire on top
-  for (let y = 0; y < 4; y++) {
-    placeBlock(
+  // Add detailed windows on each level
+  for (let floorLevel = 1; floorLevel < height; floorLevel += 4) { // Start window placement from y+1
+    const windowY = buildingStartY + floorLevel;
+    // Windows on all four sides (2x2 size)
+    // West wall (-X side)
+    placeDetailedWindow(
       world,
-      { x: startX + Math.floor(width / 2), y: buildingStartY + height + y, z: startZ + Math.floor(depth / 2) }, // Use buildingStartY
-      BLOCK_TYPES.LOG
+      { x: startX, y: windowY, z: startZ + Math.floor(depth / 2) - 1 }, // Bottom-left of opening
+      2, // Width (along Z)
+      2, // Height
+      'z', // Wall runs along Z axis
+      BLOCK_TYPES.LOG, // Frame material
+      BLOCK_TYPES.GLASS // Glass material
+    );
+    // East wall (+X side)
+    placeDetailedWindow(
+      world,
+      { x: startX + width - 1, y: windowY, z: startZ + Math.floor(depth / 2) - 1 }, // Bottom-left of opening
+      2, // Width (along Z)
+      2, // Height
+      'z', // Wall runs along Z axis
+      BLOCK_TYPES.LOG, // Frame material
+      BLOCK_TYPES.GLASS // Glass material
+    );
+    // North wall (-Z side)
+    placeDetailedWindow(
+      world,
+      { x: startX + Math.floor(width / 2) - 1, y: windowY, z: startZ }, // Bottom-left of opening
+      2, // Width (along X)
+      2, // Height
+      'x', // Wall runs along X axis
+      BLOCK_TYPES.LOG, // Frame material
+      BLOCK_TYPES.GLASS // Glass material
+    );
+    // South wall (+Z side)
+    placeDetailedWindow(
+      world,
+      { x: startX + Math.floor(width / 2) - 1, y: windowY, z: startZ + depth - 1 }, // Bottom-left of opening
+      2, // Width (along X)
+      2, // Height
+      'x', // Wall runs along X axis
+      BLOCK_TYPES.LOG, // Frame material
+      BLOCK_TYPES.GLASS // Glass material
     );
   }
+
+  // Add a flat roof (parapet style)
+  placeFloor(
+    world,
+    { x: startX - 1, y: buildingStartY + height, z: startZ - 1 }, // Start 1 block out
+    width + 2, // Extend 1 block out
+    depth + 2, // Extend 1 block out
+    BLOCK_TYPES.STONE_BRICK // Material for parapet base
+  );
+  // Add inner floor part of roof
+  placeFloor(
+    world,
+    { x: startX, y: buildingStartY + height, z: startZ },
+    width,
+    depth,
+    BLOCK_TYPES.STONE_BRICK // Material for inner roof
+  );
+  // Add parapet wall on top of the extended roof base
+  placeHollowBox(
+    world,
+    { x: startX - 1, y: buildingStartY + height + 1, z: startZ - 1 },
+    width + 2,
+    1, // Height of parapet wall
+    depth + 2,
+    BLOCK_TYPES.STONE_BRICK // Material for parapet wall
+  );
 }
 
-/**
- * Adds a window at the specified position
- * 
- * @param {World} world - The game world
- * @param {Vector3Like} position - Position for the window
- */
-function addWindow(world: World, position: Vector3Like): void {
-  // Create a 2x2 window
-  for (let x = 0; x < 2; x++) {
-    for (let y = 0; y < 2; y++) {
-      placeBlock(
-        world, 
-        { 
-          x: position.x, 
-          y: position.y + y, 
-          z: position.z 
-        }, 
-        BLOCK_TYPES.GLASS
-      );
-    }
-  }
-}
+// Removed the old addWindow function
 
 /**
  * Builds paths connecting different parts of the village
