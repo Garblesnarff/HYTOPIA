@@ -211,7 +211,7 @@ function buildSmallShop(world: World, position: Vector3Like): void {
   const startX = position.x - Math.floor(width / 2);
   const startZ = position.z - Math.floor(depth / 2);
   const groundY = findGroundHeight(world, startX, startZ); // Check one corner
-  const buildingStartY = groundY + 1; // Place building starting 1 block above ground
+  const buildingStartY = groundY; // Place walls starting AT ground level
 
   // Build the main structure
   placeHollowBox(
@@ -223,10 +223,10 @@ function buildSmallShop(world: World, position: Vector3Like): void {
     BLOCK_TYPES.CLAY
   );
   
-  // Wooden floor
+  // Wooden floor - Place explicitly at groundY
   placeFloor(
     world,
-    { x: startX + 1, y: buildingStartY, z: startZ + 1 }, // Use buildingStartY
+    { x: startX + 1, y: groundY, z: startZ + 1 }, // Use groundY for floor level
     width - 2,
     depth - 2,
     BLOCK_TYPES.WOOD_PLANKS
@@ -235,16 +235,16 @@ function buildSmallShop(world: World, position: Vector3Like): void {
   // Add a detailed door (door faces -Z, wall runs E-W, orientation 'south')
   placeDetailedDoor(
     world,
-    { x: startX + Math.floor(width / 2), y: buildingStartY -1, z: startZ }, // Position is floor block *under* opening
+    { x: startX + Math.floor(width / 2), y: groundY, z: startZ }, // Position is floor block *under* opening (at groundY)
     'south', // Wall runs E-W, door faces -Z
     BLOCK_TYPES.LOG // Frame material
   );
 
   // Add detailed windows (2x2 size) on the front wall (fixed Z)
-  // Assuming window bottom-left is at y+1 relative to buildingStartY
+  // Bottom of window opening starts at buildingStartY + 1 = groundY + 2
   placeDetailedWindow(
     world,
-    { x: startX + 2, y: buildingStartY + 1, z: startZ }, // Bottom-left of opening
+    { x: startX + 2, y: buildingStartY + 1, z: startZ }, // Bottom-left of opening (Y = groundY + 2)
     2, // Width
     2, // Height
     'x', // Wall runs along X axis
@@ -253,7 +253,7 @@ function buildSmallShop(world: World, position: Vector3Like): void {
   );
   placeDetailedWindow(
     world,
-    { x: startX + width - 4, y: buildingStartY + 1, z: startZ }, // Bottom-left of opening
+    { x: startX + width - 4, y: buildingStartY + 1, z: startZ }, // Bottom-left of opening (Y = groundY + 2)
     2, // Width
     2, // Height
     'x', // Wall runs along X axis
@@ -307,7 +307,7 @@ function buildVillageHouse(world: World, position: Vector3Like): void {
   const startX = position.x - Math.floor(width / 2);
   const startZ = position.z - Math.floor(depth / 2);
   const groundY = findGroundHeight(world, startX, startZ); // Check one corner
-  const buildingStartY = groundY + 1; // Place building starting 1 block above ground
+  const buildingStartY = groundY; // Place walls starting AT ground level
 
   // Build the main structure
   placeHollowBox(
@@ -319,10 +319,10 @@ function buildVillageHouse(world: World, position: Vector3Like): void {
     BLOCK_TYPES.BRICK
   );
   
-  // Wooden floor
+  // Wooden floor - Place explicitly at groundY
   placeFloor(
     world,
-    { x: startX + 1, y: buildingStartY, z: startZ + 1 }, // Use buildingStartY
+    { x: startX + 1, y: groundY, z: startZ + 1 }, // Use groundY for floor level
     width - 2,
     depth - 2,
     BLOCK_TYPES.WOOD_PLANKS
@@ -333,17 +333,17 @@ function buildVillageHouse(world: World, position: Vector3Like): void {
   const doorZ = startZ + depth - 1; // Wall is at max Z, opening is at max Z
   placeDetailedDoor(
     world,
-    { x: doorX, y: buildingStartY - 1, z: doorZ }, // Position is floor block *under* opening
+    { x: doorX, y: groundY, z: doorZ }, // Position is floor block *under* opening (at groundY)
     'north', // Wall runs E-W, door faces +Z
     BLOCK_TYPES.LOG // Frame material
   );
 
   // Add detailed windows (2x2 size) on side walls (fixed X)
-  // Assuming window bottom-left is at y+1 relative to buildingStartY
+  // Bottom of window opening starts at buildingStartY + 1 = groundY + 2
   // West wall window
   placeDetailedWindow(
     world,
-    { x: startX, y: buildingStartY + 1, z: startZ + Math.floor(depth / 2) -1 }, // Bottom-left of opening
+    { x: startX, y: buildingStartY + 1, z: startZ + Math.floor(depth / 2) -1 }, // Bottom-left of opening (Y = groundY + 2)
     2, // Width (along Z)
     2, // Height
     'z', // Wall runs along Z axis
@@ -353,7 +353,7 @@ function buildVillageHouse(world: World, position: Vector3Like): void {
   // East wall window
   placeDetailedWindow(
     world,
-    { x: startX + width - 1, y: buildingStartY + 1, z: startZ + Math.floor(depth / 2) -1 }, // Bottom-left of opening
+    { x: startX + width - 1, y: buildingStartY + 1, z: startZ + Math.floor(depth / 2) -1 }, // Bottom-left of opening (Y = groundY + 2)
     2, // Width (along Z)
     2, // Height
     'z', // Wall runs along Z axis
@@ -390,7 +390,7 @@ function buildTallBuilding(world: World, position: Vector3Like): void {
   const startX = position.x - Math.floor(width / 2);
   const startZ = position.z - Math.floor(depth / 2);
   const groundY = findGroundHeight(world, startX, startZ); // Check one corner
-  const buildingStartY = groundY + 1; // Place building starting 1 block above ground
+  const buildingStartY = groundY; // Place walls starting AT ground level
 
   // Build the main structure
   placeHollowBox(
@@ -402,33 +402,34 @@ function buildTallBuilding(world: World, position: Vector3Like): void {
     BLOCK_TYPES.STONE_BRICK
   );
   
-  // Add floors every 4 blocks
+  // Add floors every 4 blocks - Keep relative to buildingStartY
   for (let floorLevel = 4; floorLevel < height; floorLevel += 4) {
     placeFloor(
       world,
-      { x: startX + 1, y: buildingStartY + floorLevel, z: startZ + 1 }, // Use buildingStartY
+      { x: startX + 1, y: buildingStartY + floorLevel, z: startZ + 1 }, // Y is relative to wall base
       width - 2,
       depth - 2,
       BLOCK_TYPES.WOOD_PLANKS
     );
   }
-  
+
   // Add a detailed door (door faces -Z, wall runs E-W, orientation 'south')
   placeDetailedDoor(
     world,
-    { x: startX + Math.floor(width / 2), y: buildingStartY - 1, z: startZ }, // Position is floor block *under* opening
+    { x: startX + Math.floor(width / 2), y: groundY, z: startZ }, // Position is floor block *under* opening (at groundY)
     'south', // Wall runs E-W, door faces -Z
     BLOCK_TYPES.LOG // Frame material
   );
-  
+
   // Add detailed windows on each level
-  for (let floorLevel = 1; floorLevel < height; floorLevel += 4) { // Start window placement from y+1
-    const windowY = buildingStartY + floorLevel;
+  for (let floorLevel = 1; floorLevel < height; floorLevel += 4) {
+    // Bottom of window opening starts at buildingStartY + floorLevel = groundY + 1 + floorLevel
+    const windowBottomY = buildingStartY + floorLevel;
     // Windows on all four sides (2x2 size)
     // West wall (-X side)
     placeDetailedWindow(
       world,
-      { x: startX, y: windowY, z: startZ + Math.floor(depth / 2) - 1 }, // Bottom-left of opening
+      { x: startX, y: windowBottomY, z: startZ + Math.floor(depth / 2) - 1 }, // Bottom-left of opening
       2, // Width (along Z)
       2, // Height
       'z', // Wall runs along Z axis
@@ -438,7 +439,7 @@ function buildTallBuilding(world: World, position: Vector3Like): void {
     // East wall (+X side)
     placeDetailedWindow(
       world,
-      { x: startX + width - 1, y: windowY, z: startZ + Math.floor(depth / 2) - 1 }, // Bottom-left of opening
+      { x: startX + width - 1, y: windowBottomY, z: startZ + Math.floor(depth / 2) - 1 }, // Bottom-left of opening
       2, // Width (along Z)
       2, // Height
       'z', // Wall runs along Z axis
@@ -448,7 +449,7 @@ function buildTallBuilding(world: World, position: Vector3Like): void {
     // North wall (-Z side)
     placeDetailedWindow(
       world,
-      { x: startX + Math.floor(width / 2) - 1, y: windowY, z: startZ }, // Bottom-left of opening
+      { x: startX + Math.floor(width / 2) - 1, y: windowBottomY, z: startZ }, // Bottom-left of opening
       2, // Width (along X)
       2, // Height
       'x', // Wall runs along X axis
@@ -458,7 +459,7 @@ function buildTallBuilding(world: World, position: Vector3Like): void {
     // South wall (+Z side)
     placeDetailedWindow(
       world,
-      { x: startX + Math.floor(width / 2) - 1, y: windowY, z: startZ + depth - 1 }, // Bottom-left of opening
+      { x: startX + Math.floor(width / 2) - 1, y: windowBottomY, z: startZ + depth - 1 }, // Bottom-left of opening
       2, // Width (along X)
       2, // Height
       'x', // Wall runs along X axis

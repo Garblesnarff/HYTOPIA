@@ -125,10 +125,10 @@ function buildMainHouse(world: World): void {
   const houseStartZ = centerZ - houseDepth / 2;
   // Find the actual ground height at the house's center/corner
   const groundY = findGroundHeight(world, houseStartX, houseStartZ); // Check one corner
-  const houseStartY = groundY + 1; // Place the house starting 1 block above the ground
+  const houseStartY = groundY + 0; // Reverted: Place walls starting 1 block above ground
   console.log(`Placing player house foundation at Y=${houseStartY} (Ground was Y=${groundY})`);
 
-  // Foundation platform
+  // Foundation platform - Will now be placed at groundY (houseStartY - 1)
   placeCuboid(
     world,
     { 
@@ -154,10 +154,10 @@ function buildMainHouse(world: World): void {
     BLOCK_TYPES.BRICK
   );
   
-  // Wooden floor
+  // Wooden floor - Place explicitly at groundY
   placeFloor(
     world,
-    { x: houseStartX + 1, y: houseStartY, z: houseStartZ + 1 },
+    { x: houseStartX + 1, y: groundY, z: houseStartZ + 1 }, // Use groundY for floor level
     houseWidth - 2,
     houseDepth - 2,
     BLOCK_TYPES.WOOD_PLANKS
@@ -168,24 +168,25 @@ function buildMainHouse(world: World): void {
   const doorZ = houseStartZ + houseDepth - 1; // Wall is at max Z, opening is at max Z
   placeDetailedDoor(
     world,
-    { x: doorX, y: houseStartY - 1, z: doorZ }, // Position is floor block *under* opening
+    { x: doorX, y: groundY, z: doorZ }, // Position is floor block *under* opening (at groundY)
     'north', // Wall runs E-W, door faces +Z
     BLOCK_TYPES.LOG // Frame material
   );
 
   // Add detailed windows (2x2 size)
-  const windowY = houseStartY + 1; // Bottom of window opening is 1 block above floor
+  // Bottom of window opening starts at houseStartY + 1 = groundY + 2
+  const windowBottomY = houseStartY + 1;
   // Front windows (fixed Z = doorZ, wall runs along X)
-  placeDetailedWindow(world, { x: doorX - 4, y: windowY, z: doorZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
-  placeDetailedWindow(world, { x: doorX + 2, y: windowY, z: doorZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
+  placeDetailedWindow(world, { x: doorX - 4, y: windowBottomY, z: doorZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
+  placeDetailedWindow(world, { x: doorX + 2, y: windowBottomY, z: doorZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
 
   // Side windows (fixed X, wall runs along Z)
-  placeDetailedWindow(world, { x: houseStartX, y: windowY, z: centerZ - 1 }, 2, 2, 'z', BLOCK_TYPES.LOG);
-  placeDetailedWindow(world, { x: houseStartX + houseWidth - 1, y: windowY, z: centerZ - 1 }, 2, 2, 'z', BLOCK_TYPES.LOG);
+  placeDetailedWindow(world, { x: houseStartX, y: windowBottomY, z: centerZ - 1 }, 2, 2, 'z', BLOCK_TYPES.LOG);
+  placeDetailedWindow(world, { x: houseStartX + houseWidth - 1, y: windowBottomY, z: centerZ - 1 }, 2, 2, 'z', BLOCK_TYPES.LOG);
 
   // Back windows (fixed Z = houseStartZ, wall runs along X)
-  placeDetailedWindow(world, { x: doorX - 4, y: windowY, z: houseStartZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
-  placeDetailedWindow(world, { x: doorX + 2, y: windowY, z: houseStartZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
+  placeDetailedWindow(world, { x: doorX - 4, y: windowBottomY, z: houseStartZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
+  placeDetailedWindow(world, { x: doorX + 2, y: windowBottomY, z: houseStartZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
 
   // Add a pitched roof
   placePitchedRoof(
