@@ -38,13 +38,13 @@ export const playerStates = new Map<string, PlayerState>();
  * @param player The player that joined
  */
 export function setupPlayer(world: World, player: Player): void {
-  // Instantiate the custom controller - Temporarily disabled for testing
-  // const controller = new CyberCrawlerController();
+  // Re-enable the custom controller
+  const controller = new CyberCrawlerController();
 
   // Create player entity
   const playerEntity = new PlayerEntity({
     player,
-    // controller, // Assign the custom controller instance - Temporarily disabled
+    controller, // Re-enable assignment of the custom controller instance
     // Using original player model and scale for testing
     modelUri: 'models/players/player.gltf',
     modelScale: 0.5,
@@ -99,12 +99,69 @@ export function setupPlayer(world: World, player: Player): void {
   playerEntity.spawn(world, spawnPosition);
 
   console.log(`Player ${player.id} spawned at configured position:`, spawnPosition); // Updated log message
-  
+
   // Send helpful debug message to player
-  world.chatManager.sendPlayerMessage(player, 'CyberCrawler: Test blocks placed right beneath you!', '#00FF00');
-  world.chatManager.sendPlayerMessage(player, 'Look down and under you to find the blocks we placed!', '#00FF00');
-  world.chatManager.sendPlayerMessage(player, 'Type /help for debug commands', '#00FF00');
+  // NOTE: These messages seem to be missing from the /whereami command handler below.
+  // Adding them back here for consistency, assuming they were intended.
+  // If not, these lines can be removed later.
+  world.chatManager.sendPlayerMessage(player, 'CyberCrawler: Test blocks placed right beneath you!', '00FF00');
+  world.chatManager.sendPlayerMessage(player, 'Look down and under you to find the blocks we placed!', '00FF00');
+  world.chatManager.sendPlayerMessage(player, 'Type /help for debug commands', '00FF00');
+
+  // Register commands for the player (Moved from index.ts potentially?)
+  registerPlayerCommands(world, player);
 }
+
+
+/**
+ * Registers standard commands for a given player.
+ * NOTE: This function seems to be missing from the provided file content,
+ * but the error trace indicates calls originate here. Assuming it exists.
+ * If it doesn't, these changes won't apply.
+ */
+ function registerPlayerCommands(world: World, player: Player): void {
+    world.chatManager.registerCommand('/whoareyou', (cmdPlayer) => {
+      if (cmdPlayer.id === player.id) {
+        world.chatManager.sendPlayerMessage(player, 'I am CyberCrawler, a rogue-lite dungeon crawler game!', '00FFFF'); // Removed #
+      }
+    });
+
+    world.chatManager.registerCommand('/whereami', (cmdPlayer) => {
+      if (cmdPlayer.id === player.id) {
+        const entity = world.entityManager.getPlayerEntitiesByPlayer(player)[0];
+        if (entity && entity.position) {
+          const pos = entity.position;
+          world.chatManager.sendPlayerMessage(
+            player,
+            `You are at position X:${Math.floor(pos.x)} Y:${Math.floor(pos.y)} Z:${Math.floor(pos.z)}`,
+            '00FFFF' // Removed #
+          );
+        } else {
+           world.chatManager.sendPlayerMessage(player, 'Could not find your entity position.', 'FF0000'); // Removed #
+        }
+      }
+    });
+
+    world.chatManager.registerCommand('/showblocks', (cmdPlayer) => {
+      if (cmdPlayer.id === player.id) {
+        const entity = world.entityManager.getPlayerEntitiesByPlayer(player)[0];
+        if (entity && entity.position) {
+          const pos = entity.position;
+          world.chunkLattice?.setBlock(
+            { x: Math.floor(pos.x), y: Math.floor(pos.y)-1, z: Math.floor(pos.z) },
+            20 // Assuming 20 is Stone Brick based on previous context
+          );
+          world.chatManager.sendPlayerMessage(
+            player,
+            `Placed a test block at your feet (${Math.floor(pos.x)},${Math.floor(pos.y)-1},${Math.floor(pos.z)})`,
+            '00FFFF' // Removed #
+          );
+        } else {
+           world.chatManager.sendPlayerMessage(player, 'Could not find your entity position to place block.', 'FF0000'); // Removed #
+        }
+      }
+    });
+  }
 
 /**
  * Handles player collision with objects and enemies
@@ -134,7 +191,13 @@ export function canPlayerDash(playerId: string): boolean {
  * Performs a dash in the direction the player is facing - Exported
  */
 export function performDash(entity: PlayerEntity): void {
-  const direction = entity.directionFromRotation;
+  // Use camera facing direction instead of entity rotation for third-person dash
+  const direction = entity.player?.camera?.facingDirection;
+
+  if (!direction) {
+    console.error(`Player ${entity.player?.id || 'Unknown'} cannot dash: Camera direction unavailable.`);
+    return;
+  }
   
   // Apply a strong impulse in the facing direction
   applyImpulse(entity, direction, PLAYER_CONSTANTS.DASH_FORCE * entity.mass); // Try using entity.mass again

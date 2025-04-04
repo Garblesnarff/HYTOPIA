@@ -118,7 +118,7 @@ export class CyberCrawlerController extends PlayerEntityController {
       return;
     }
 
-    world.chatManager.sendPlayerMessage(player, 'Attempting interaction...', '#FFFF00');
+    world.chatManager.sendPlayerMessage(player, 'Attempting interaction...', 'FFFF00'); // Removed #
 
     const interactionDistance = 5.0;
     // Define example block IDs locally for clarity
@@ -142,7 +142,14 @@ export class CyberCrawlerController extends PlayerEntityController {
       { filterExcludeRigidBody: entity.rawRigidBody }
     );
 
-    console.log('Raycast result:', raycastResult);
+    // console.log('Raycast result:', raycastResult); // Avoid logging the entire complex object
+    // Log specific details instead:
+    if (raycastResult) {
+        console.log(`Raycast Hit: ${raycastResult.hitEntity ? `Entity ID ${raycastResult.hitEntity.id}` : raycastResult.hitBlock ? `Block at ${JSON.stringify(raycastResult.hitBlock.globalCoordinate)}` : 'Nothing'}`);
+    } else {
+        console.log("Raycast Hit: Nothing");
+    }
+
 
     // --- Check for Entity Hit First ---
     if (raycastResult?.hitEntity) {
@@ -154,7 +161,7 @@ export class CyberCrawlerController extends PlayerEntityController {
         hitEntity.interact(player);
         return; // Interaction handled
       } else {
-        world.chatManager.sendPlayerMessage(player, `You interacted with entity: ${hitEntity.id}`, '#FFFFFF');
+        world.chatManager.sendPlayerMessage(player, `You interacted with entity: ${hitEntity.id}`, 'FFFFFF'); // Removed #
         console.log(`Entity type ${hitEntity.constructor.name} interacted with, but no specific action defined.`);
         return; // Interaction handled
       }
@@ -174,18 +181,18 @@ export class CyberCrawlerController extends PlayerEntityController {
       if (blockNumericId === scrapMetalBlockNumericId) {
         console.log(`Player ${player.id} gathered Scrap Metal!`);
         world.chunkLattice?.setBlock(blockCoordinate, airBlockNumericId); // Use numeric ID for air
-        world.chatManager.sendPlayerMessage(player, 'You gathered Scrap Metal!', '#00FF00');
+        world.chatManager.sendPlayerMessage(player, 'You gathered Scrap Metal!', '00FF00'); // Removed #
         // TODO: Add scrap metal to inventory: InventoryManager.instance.addItems(player.id, [{ itemId: 'scrap_metal', quantity: 1 }]);
       } else if (blockNumericId !== undefined && blockNumericId !== null) { // Check if it's a valid block ID
-        world.chatManager.sendPlayerMessage(player, `You interacted with block type ID: ${blockNumericId}`, '#FFFFFF');
+        world.chatManager.sendPlayerMessage(player, `You interacted with block type ID: ${blockNumericId}`, 'FFFFFF'); // Removed #
         console.log(`Block type ID ${blockNumericId} interacted with but not collected.`);
       } else {
-         world.chatManager.sendPlayerMessage(player, 'Interacted with an unknown block type.', '#FFAAAA');
+         world.chatManager.sendPlayerMessage(player, 'Interacted with an unknown block type.', 'FFAAAA'); // Removed #
          console.log(`Interacted with block at ${JSON.stringify(blockCoordinate)}, but type ID is unknown or null.`);
       }
     } else {
       // No entity or block hit
-      world.chatManager.sendPlayerMessage(player, 'Nothing to interact with here.', '#FF0000');
+      world.chatManager.sendPlayerMessage(player, 'Nothing to interact with here.', 'FF0000'); // Removed #
       console.log('No entity or block hit by interaction raycast.');
     }
   }

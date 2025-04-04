@@ -77,7 +77,7 @@ export class CraftingTableEntity extends Entity {
     console.log(`CraftingTableEntity ${this.id}: Opening crafting interface for Player ${player.id}`);
     // TODO: Call CraftingManager.instance.openPlayerCraftingInterface(player);
     // For now, just send a chat message as placeholder
-    player.world?.chatManager.sendPlayerMessage(player, 'You opened the Crafting Table!', '#00FFFF');
+    player.world?.chatManager.sendPlayerMessage(player, 'You opened the Crafting Table!', '00FFFF'); // Removed #
   }
 
   /**
