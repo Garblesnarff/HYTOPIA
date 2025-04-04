@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crafting Interface</title>
+    <style>
+        /* Basic Styling - Replace with proper CSS later */
+        body {
+            font-family: 'Courier New', Courier, monospace; /* Cyberpunk feel */
+            color: #00ff00; /* Neon green text */
+            background-color: rgba(10, 10, 20, 0.85); /* Dark semi-transparent background */
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            display: none; /* Hidden by default, shown by script */
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 15px #00ff00 inset;
+        }
+        .crafting-container {
+            display: flex;
+            padding: 20px;
+            height: calc(100% - 40px); /* Full height minus padding */
+            box-sizing: border-box;
+        }
+        .recipe-list-panel, .details-panel {
+            border: 1px solid #008080; /* Teal border */
+            padding: 15px;
+            margin: 5px;
+            overflow-y: auto; /* Allow scrolling if content overflows */
+        }
+        .recipe-list-panel {
+            flex: 1; /* Takes up 1 part of the space */
+        }
+        .details-panel {
+            flex: 2; /* Takes up 2 parts of the space */
+            display: flex;
+            flex-direction: column;
+        }
+        h2, h3 {
+            color: #ffffff; /* White headers */
+            border-bottom: 1px dashed #00ff00;
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        li.recipe-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        li.recipe-item:hover {
+            background-color: rgba(0, 255, 0, 0.1);
+            border-color: #00ff00;
+        }
+        li.recipe-item.selected {
+            background-color: rgba(0, 255, 0, 0.2);
+            border-color: #ffffff;
+            font-weight: bold;
+        }
+        .materials-list, .result-preview {
+            margin-bottom: 20px;
+        }
+        .material-item span {
+            display: inline-block;
+            min-width: 100px;
+        }
+        .craft-button {
+            padding: 10px 20px;
+            background-color: #005050;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: auto; /* Pushes button to bottom */
+            align-self: center;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .craft-button:hover:not(:disabled) {
+            background-color: #008080;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        .craft-button:disabled {
+            background-color: #333;
+            color: #777;
+            border-color: #555;
+            cursor: not-allowed;
+        }
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #550000;
+            color: #ff0000;
+            border: 1px solid #ff0000;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .close-button:hover {
+            background: #ff0000;
+            color: #000000;
+        }
+        /* Placeholder for crafting progress */
+        .crafting-progress {
+            height: 10px;
+            background-color: #555;
+            margin-top: 10px;
+            border: 1px solid #00ff00;
+        }
+        .crafting-progress-bar {
+            height: 100%;
+            width: 0%; /* Updated by script */
+            background-color: #00ff00;
+            transition: width 0.1s linear;
+        }
+
+    </style>
+</head>
+<body>
+    <button class="close-button" id="close-crafting-ui">X</button>
+    <div class="crafting-container">
+        <div class="recipe-list-panel">
+            <h2>Recipes</h2>
+            <ul id="recipe-list">
+                <!-- Recipe items will be populated by script -->
+                <!-- Example: <li class="recipe-item" data-recipe-id="craft_stim_pack">Stim Pack</li> -->
+            </ul>
+        </div>
+        <div class="details-panel">
+            <h2 id="selected-recipe-name">Select a Recipe</h2>
+            <div class="materials-list">
+                <h3>Required Materials:</h3>
+                <ul id="materials-list">
+                    <!-- Materials will be populated by script -->
+                    <!-- Example: <li class="material-item"><span>Medical Supplies:</span> 1 / 2</li> -->
+                </ul>
+            </div>
+            <div class="result-preview">
+                <h3>Result:</h3>
+                <p id="result-name">---</p>
+                <p id="result-description">---</p>
+                <!-- Add icon preview later -->
+            </div>
+            <div class="crafting-progress" style="display: none;">
+                <div class="crafting-progress-bar" id="progress-bar"></div>
+            </div>
+            <button class="craft-button" id="craft-button" disabled>Craft</button>
+        </div>
+    </div>
+
+    <!-- Include crafting-ui-handler.js later -->
+    <!-- <script src="../handlers/crafting-ui-handler.js"></script> -->
+    <!-- For HYTOPIA SDK, logic might be injected or handled differently -->
+</body>
+</html>

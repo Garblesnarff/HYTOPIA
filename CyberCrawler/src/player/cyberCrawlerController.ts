@@ -4,12 +4,14 @@
  */
 
 // Import necessary types
-import { PlayerEntityController, PlayerInput, PlayerEntity, PlayerCameraOrientation, Vector3, RaycastHit } from 'hytopia'; // Use RaycastHit
+import { PlayerEntityController, PlayerInput, PlayerEntity, PlayerCameraOrientation, Vector3, RaycastHit, Player, World } from 'hytopia'; // Added missing imports
 import { canPlayerDash, performDash, playerStates } from './playerController';
 import { applyDamage } from '../combat/combatSystem';
+import { CraftingTableEntity } from '../crafting/entities/crafting-table'; // Import CraftingTableEntity
+import { BLOCK_TYPES } from '../constants/block-types'; // Import block type constants
 
 export class CyberCrawlerController extends PlayerEntityController {
-  
+
   /**
    * Called every tick with the player's current input state.
    * @param entity The player entity being controlled.
@@ -17,177 +19,174 @@ export class CyberCrawlerController extends PlayerEntityController {
    * @param cameraOrientation The player's camera orientation.
    * @param dt Delta time since the last tick (milliseconds).
    */
-  tickWithPlayerInput(entity: PlayerEntity, input: PlayerInput, cameraOrientation: PlayerCameraOrientation, dt: number): void { // Corrected signature
+  tickWithPlayerInput(entity: PlayerEntity, input: PlayerInput, cameraOrientation: PlayerCameraOrientation, dt: number): void {
     // Ensure default movement logic runs first
-    super.tickWithPlayerInput(entity, input, cameraOrientation, dt); // Call super with correct arguments
+    super.tickWithPlayerInput(entity, input, cameraOrientation, dt);
 
     // Add custom dash logic
-    if (!entity || !entity.player) return; // Safety check using the passed entity
+    if (!entity || !entity.player) return; // Safety check
 
-    const playerId = entity.player.id; // Use passed entity
+    const playerId = entity.player.id;
 
     // Handle dash ability on right-click (using abbreviated key 'mr')
     if (input.mr && canPlayerDash(playerId)) {
       performDash(entity);
-      const state = playerStates.get(playerId); // Access shared player state
+      const state = playerStates.get(playerId);
       if (state) {
         state.lastDashTime = Date.now();
       }
-      // Consume the input so it's not processed again until released and re-pressed
-      input.mr = false;
+      input.mr = false; // Consume input
     }
 
     // Handle melee attack on left-click (using abbreviated key 'ml')
     if (input.ml) {
       this.performMeleeAttack(entity);
-      // Consume the input
-      input.ml = false;
+      input.ml = false; // Consume input
     }
 
     // Handle interaction on 'E' key press (using abbreviated key 'e')
     if (input.e) {
-      this.performInteractionCheck(entity, cameraOrientation);
-      // Consume the input
-      input.e = false;
+      this.performInteractionCheck(entity); // Removed cameraOrientation as it wasn't used
+      input.e = false; // Consume input
     }
   }
 
   /**
-   * Placeholder for performing a melee attack.
    * Performs a basic melee attack using a sphere cast.
    * @param entity The player entity performing the attack.
    */
   performMeleeAttack(entity: PlayerEntity): void {
     if (!entity || !entity.player) return;
 
-    // Get world reference from entity
     const world = entity.world;
-    if (!world) {
-      console.error("Missing world reference in melee attack");
+    if (!world || !world.simulation) { // Check for simulation object
+      console.error("Missing world or world.simulation reference in melee attack");
       return;
     }
 
-    const attackRange = 1.5; // Range of the melee attack
-    const attackRadius = 0.8; // Radius of the sphere cast
-    const attackDamage = 15; // Base damage for a fist attack
+    const attackRange = 1.5;
+    const attackRadius = 0.8;
+    const attackDamage = 15;
 
-    // Calculate the center of the sphere cast in front of the player
     const forwardVector = entity.directionFromRotation;
-    const currentPosition = entity.position; // Use entity.position as confirmed by rules examples
+    const currentPosition = entity.position;
     if (!currentPosition) {
-      console.error(`Player ${entity.player?.id || 'Unknown'} has no position! Cannot perform attack.`); // Added safe access for player.id
+      console.error(`Player ${entity.player?.id || 'Unknown'} has no position! Cannot perform attack.`);
       return;
     }
-    // Use Vector3 constructor if available, otherwise keep object literal and hope for type compatibility
-    // Assuming Vector3 constructor exists: new Vector3(x, y, z)
+
     const castCenter = new Vector3(
       currentPosition.x + forwardVector.x * attackRange,
       currentPosition.y + forwardVector.y * attackRange + 0.5, // Slightly offset upwards
       currentPosition.z + forwardVector.z * attackRange
     );
 
-    // Perform the sphere cast using the (assumed global) world object
-    const hits = world.spherecast(castCenter, attackRadius);
+    // Perform the sphere cast using world.simulation
+    // const hits = world.simulation.spherecast(castCenter, attackRadius) ?? []; // Use nullish coalescing
+    // console.warn("Melee attack spherecast is currently disabled due to SDK limitations."); // Add warning
 
-    console.log(`Player ${entity.player.id} performed melee attack! Casting sphere at ${JSON.stringify(castCenter)}`);
+    console.log(`Player ${entity.player.id} performed melee attack attempt near ${JSON.stringify(castCenter)} (spherecast disabled)`);
 
-    // Check hits
+    // Temporarily disable hit processing as spherecast is unavailable
+    /*
     for (const hit of hits) {
-      // Ignore self-hits
-      if (hit.entity.id === entity.id) continue;
+      if (hit.entity.id === entity.id) continue; // Ignore self-hits
 
       // Check if the hit entity is a valid target (not self, not another player)
-      // TODO: Replace this with a proper tag check ('enemy') once tag system is clarified/fixed
       if (hit.entity.id !== entity.id && !(hit.entity instanceof PlayerEntity)) {
         console.log(`Melee hit potential target: ${hit.entity.id}`);
-        // Apply damage (using the imported function)
-        // Note: We're applying flat damage here, not momentum-based, for simplicity.
-        // The combatSystem's collision handler deals with momentum damage.
         applyDamage(hit.entity, attackDamage);
-
-        // Optional: Apply a small impulse for visual feedback
+        // Optional: Apply impulse
         // hit.entity.applyImpulse({ x: forwardVector.x * 50, y: 20, z: forwardVector.z * 50 });
-
-        // Attack only hits one enemy for now
-        break;
+        break; // Hit only one target
       }
     }
+    */
   }
 
   /**
-   * Performs a raycast check for player interaction with blocks.
+   * Performs a raycast check for player interaction with blocks and entities.
    * @param entity The player entity performing the check.
-   * @param cameraOrientation The player's camera orientation.
    */
-  performInteractionCheck(entity: PlayerEntity, cameraOrientation: PlayerCameraOrientation): void {
-    // Log when interaction key is pressed
+  performInteractionCheck(entity: PlayerEntity): void { // Removed unused cameraOrientation parameter
     console.log(`Player ${entity.player?.id || 'Unknown'} attempting interaction...`);
-    
-    // Get world reference from entity to avoid global declaration
+
     const world = entity.world;
-    if (!entity || !entity.player || !world) {
-      console.error("Missing entity, player, or world reference");
+    const player = entity.player;
+    if (!entity || !player || !world || !world.simulation) { // Check for simulation
+      console.error("Missing entity, player, world, or world.simulation reference for interaction check.");
       return;
     }
 
-    // Send feedback to player about interaction attempt
-    world.chatManager.sendPlayerMessage(entity.player, 'Attempting interaction...', '#FFFF00');
+    world.chatManager.sendPlayerMessage(player, 'Attempting interaction...', '#FFFF00');
 
+    const interactionDistance = 5.0;
+    // Define example block IDs locally for clarity
+    const scrapMetalBlockNumericId = 100; // Placeholder ID for Scrap Metal
+    const airBlockNumericId = BLOCK_TYPES.AIR; // Use constant for Air
 
-    const interactionDistance = 5.0; // Max distance player can interact from
-    const scrapMetalBlockId = 100;
-    const airBlockId = 0;
+    const rayOrigin = entity.position;
+    const rayDirection = player.camera?.facingDirection;
 
-    // Perform raycast using world.simulation.raycast
-    // Use entity position as origin (like example) and camera direction
-    const rayOrigin = entity.position; // Use entity position as origin
-    const rayDirection = entity.player?.camera?.facingDirection; // Get camera direction
-
-    if (!rayOrigin || !rayDirection) { // Check both origin and direction
-      console.error(`Player ${entity.player?.id || 'Unknown'} camera data unavailable for raycast.`);
+    if (!rayOrigin || !rayDirection) {
+      console.error(`Player ${player.id} camera data unavailable for raycast.`);
       return;
     }
 
-    console.log(`Performing raycast from ${JSON.stringify(rayOrigin)} in direction ${JSON.stringify(rayDirection)}`);
+    console.log(`Performing interaction raycast from ${JSON.stringify(rayOrigin)} in direction ${JSON.stringify(rayDirection)}`);
 
-    const raycastResult = world.simulation?.raycast(
+    const raycastResult = world.simulation.raycast( // Call on simulation
       rayOrigin,
       rayDirection,
       interactionDistance,
-      { // Exclude the player itself from the raycast
-        filterExcludeRigidBody: entity.rawRigidBody,
-      }
+      { filterExcludeRigidBody: entity.rawRigidBody }
     );
-    
+
     console.log('Raycast result:', raycastResult);
 
-    // Check if the raycast hit a block
-    if (raycastResult?.hitBlock) {
-      const hitBlockInfo = raycastResult.hitBlock; // Contains coordinate and potentially type ID
-      const blockCoordinate = hitBlockInfo.globalCoordinate; // Use globalCoordinate
-      const blockTypeId = world.chunkLattice?.getBlockType(blockCoordinate); // Get type ID separately
+    // --- Check for Entity Hit First ---
+    if (raycastResult?.hitEntity) {
+      const hitEntity = raycastResult.hitEntity;
+      console.log(`Interaction check hit entity: ${hitEntity.id} of type ${hitEntity.constructor.name}`);
 
-      console.log(`Interaction check hit block at ${JSON.stringify(blockCoordinate)} with type ID: ${blockTypeId}`);
-
-      // Check if it's the Scrap Metal Pile block
-      if (blockTypeId === scrapMetalBlockId) {
-        console.log(`Player ${entity.player.id} gathered Scrap Metal!`);
-
-        // Remove the block (replace with air)
-        world.chunkLattice?.setBlock(blockCoordinate, airBlockId);
-
-        // Send feedback to player
-        world.chatManager.sendPlayerMessage(entity.player, 'You gathered Scrap Metal!', '#00FF00');
-
-        // TODO: Add scrap metal to player inventory
+      if (hitEntity instanceof CraftingTableEntity) {
+        console.log(`Hit a Crafting Table! Triggering interaction.`);
+        hitEntity.interact(player);
+        return; // Interaction handled
       } else {
-        // Provide information about the block that was hit
-        world.chatManager.sendPlayerMessage(entity.player, `You interacted with block type: ${blockTypeId}`, '#FFFFFF');
-        console.log(`Block type ${blockTypeId} interacted with but not collected (not scrap metal)`);
+        world.chatManager.sendPlayerMessage(player, `You interacted with entity: ${hitEntity.id}`, '#FFFFFF');
+        console.log(`Entity type ${hitEntity.constructor.name} interacted with, but no specific action defined.`);
+        return; // Interaction handled
+      }
+    }
+
+    // --- Check for Block Hit if No Entity Was Hit ---
+    if (raycastResult?.hitBlock) {
+      const hitBlockInfo = raycastResult.hitBlock;
+      const blockCoordinate = hitBlockInfo.globalCoordinate;
+      // Assume getBlockType returns an object like { id: number, ... } or null
+      const blockTypeObject = world.chunkLattice?.getBlockType(blockCoordinate);
+      const blockNumericId = blockTypeObject?.id; // Safely access the ID
+
+      console.log(`Interaction check hit block at ${JSON.stringify(blockCoordinate)} with type ID: ${blockNumericId}`);
+
+      // Compare the numeric ID
+      if (blockNumericId === scrapMetalBlockNumericId) {
+        console.log(`Player ${player.id} gathered Scrap Metal!`);
+        world.chunkLattice?.setBlock(blockCoordinate, airBlockNumericId); // Use numeric ID for air
+        world.chatManager.sendPlayerMessage(player, 'You gathered Scrap Metal!', '#00FF00');
+        // TODO: Add scrap metal to inventory: InventoryManager.instance.addItems(player.id, [{ itemId: 'scrap_metal', quantity: 1 }]);
+      } else if (blockNumericId !== undefined && blockNumericId !== null) { // Check if it's a valid block ID
+        world.chatManager.sendPlayerMessage(player, `You interacted with block type ID: ${blockNumericId}`, '#FFFFFF');
+        console.log(`Block type ID ${blockNumericId} interacted with but not collected.`);
+      } else {
+         world.chatManager.sendPlayerMessage(player, 'Interacted with an unknown block type.', '#FFAAAA');
+         console.log(`Interacted with block at ${JSON.stringify(blockCoordinate)}, but type ID is unknown or null.`);
       }
     } else {
-      world.chatManager.sendPlayerMessage(entity.player, 'No block detected in front of you', '#FF0000');
-      console.log('No block hit by raycast');
+      // No entity or block hit
+      world.chatManager.sendPlayerMessage(player, 'Nothing to interact with here.', '#FF0000');
+      console.log('No entity or block hit by interaction raycast.');
     }
   }
 }

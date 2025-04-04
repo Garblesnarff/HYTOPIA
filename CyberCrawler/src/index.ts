@@ -4,13 +4,14 @@
  */
 
 // Combined imports
-import { startServer, Entity, EntityEvent, PlayerEntity, PlayerEvent, World, Player, BlockTypeRegistry, Vector3, WorldEvent, WorldLoopEvent } from 'hytopia'; // Added WorldLoopEvent
+import { startServer, Entity, EntityEvent, PlayerEntity, PlayerEvent, World, Player, BlockTypeRegistry, Vector3, WorldEvent, WorldLoopEvent, PlayerUIEvent } from 'hytopia'; // Added WorldLoopEvent, PlayerUIEvent
 import { initPhysics } from './physics/physicsSystem';
 import { setupPlayer } from './player/playerController';
 // import { createTestEnvironment } from './world/testEnvironment'; // Removed - using map.json instead
 import { initCombatSystem } from './combat/combatSystem';
 import worldMap from '../assets/map.json'; // Import the map file
 import { generateSimpleDungeon } from './world/dungeonGenerator'; // Import dungeon generator
+import { CraftingManager } from './crafting/crafting-manager'; // Import CraftingManager
 // Imports for spawn check no longer needed
 // import { findGroundHeight } from './utils/terrain-utils';
 // import { WORLD_HEIGHT } from './constants/world-config';
@@ -29,8 +30,29 @@ startServer((world: World) => { // Add type annotation for world
   console.log("Debug rendering ENABLED");
   
   // Initialize our core systems
-  initPhysics(world);
-  initCombatSystem(world);
+  try {
+      console.log("[Index] Initializing Physics...");
+      initPhysics(world);
+      console.log("[Index] Physics Initialized.");
+  } catch (error) {
+      console.error("[Index] ERROR during initPhysics:", error);
+  }
+
+  try {
+      console.log("[Index] Initializing Combat System...");
+      initCombatSystem(world);
+      console.log("[Index] Combat System Initialized.");
+  } catch (error) {
+      console.error("[Index] ERROR during initCombatSystem:", error);
+  }
+
+  try {
+      console.log("[Index] Initializing Crafting Manager...");
+      CraftingManager.instance.initializeCraftingTables(world); // Initialize Crafting Tables
+      console.log("[Index] Crafting Manager Initialized.");
+  } catch (error) {
+      console.error("[Index] ERROR during CraftingManager init:", error);
+  }
 
   // Register custom block types BEFORE trying to use them
   registerCustomBlockTypes(world.blockTypeRegistry);
@@ -110,8 +132,19 @@ startServer((world: World) => { // Add type annotation for world
    */
   function handlePlayerSetup(world: World, player: Player): void {
     console.log(`Setting up player ${player.id}...`);
-    setupPlayer(world, player); // Spawns the entity
+    setupPlayer(world, player); // Spawns the entity, loads UI via player.ui.load() inside setupPlayer
     registerPlayerCommands(world, player); // Registers commands
+
+    // Setup listener for UI events from this player
+    if (player.ui) {
+        player.ui.on(PlayerUIEvent.DATA, ({ data }) => {
+            // Route UI events to the CraftingManager
+            CraftingManager.instance.handlePlayerUIEvent(player, data);
+        });
+        console.log(`Registered UI event listener for player ${player.id}`);
+    } else {
+        console.error(`Failed to register UI event listener for player ${player.id}: player.ui is not available.`);
+    }
   }
 
   // --- Event Listeners ---

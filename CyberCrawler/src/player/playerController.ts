@@ -8,6 +8,7 @@ import { applyImpulse } from '../physics/physicsSystem';
 import { CyberCrawlerController } from './cyberCrawlerController';
 import { PLAYER_CONFIG } from '../constants/world-config'; // Import player config for spawn point
 import { findGroundHeight } from '../utils/terrain-utils'; // Import ground finding utility
+import { InventoryItem } from './inventory-manager'; // Import InventoryItem
 
 // Player movement constants
 const PLAYER_CONSTANTS = {
@@ -25,7 +26,7 @@ interface PlayerState {
   health: number;
   lastDashTime: number;
   cyberEnhancements: string[];
-  inventory: any[];
+  inventory: InventoryItem[]; // Use the specific InventoryItem type
 }
 
 // Map to store player states - Exported for use in custom controller
@@ -77,7 +78,7 @@ export function setupPlayer(world: World, player: Player): void {
     health: PLAYER_CONSTANTS.MAX_HEALTH,
     lastDashTime: 0,
     cyberEnhancements: [],
-    inventory: [],
+    inventory: [], // Initialize as empty array
   };
   playerStates.set(player.id, playerState);
 
@@ -90,7 +91,7 @@ export function setupPlayer(world: World, player: Player): void {
   // --- Start: Explicit Camera Setup for Diagnostics ---
   console.log("Setting camera to THIRD_PERSON for diagnostics...");
   player.camera.setMode(PlayerCameraMode.THIRD_PERSON);
-  player.camera.setOffset({ x: 0, y: 2, z: -5 }); // Standard behind-and-above offset
+  player.camera.setOffset({ x: 0, y: 2, z: -8 }); // Standard behind-and-above offset
   // --- End: Explicit Camera Setup ---
 
   // Determine the actual spawn position based on config and ground height
