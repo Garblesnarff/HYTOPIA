@@ -38,32 +38,28 @@ export const playerStates = new Map<string, PlayerState>();
  * @param player The player that joined
  */
 export function setupPlayer(world: World, player: Player): void {
-  // Instantiate the custom controller
-  const controller = new CyberCrawlerController();
+  // Instantiate the custom controller - Temporarily disabled for testing
+  // const controller = new CyberCrawlerController();
 
   // Create player entity
   const playerEntity = new PlayerEntity({
     player,
-    controller, // Assign the custom controller instance
-    // Using a cyberpunk-styled model for the player
-    modelUri: 'models/characters/cyber_warrior.gltf',
-    modelScale: 1.0,
+    // controller, // Assign the custom controller instance - Temporarily disabled
+    // Using original player model and scale for testing
+    modelUri: 'models/players/player.gltf',
+    modelScale: 0.5,
     modelLoopedAnimations: ['idle'],
-    // Define rigid body options
-    rigidBodyOptions: {
-      // mass: 70, // Removed - TS Error: Property 'mass' does not exist on type 'RigidBodyOptions'.
-      // Define colliders as an array inside rigidBodyOptions
-      colliders: [
-        {
-          shape: ColliderShape.CAPSULE, // Use ColliderShape enum
-          radius: 0.4,
-          halfHeight: 1.0, // Changed from height: 1.8
-          // offset: { x: 0, y: 0.9, z: 0 }, // Removed - TS Error: Property 'offset' does not exist
-          friction: PLAYER_CONSTANTS.GROUND_FRICTION, // Moved friction inside the collider definition
-        }
-      ],
-      // friction: PLAYER_CONSTANTS.GROUND_FRICTION, // Removed from here
-    },
+    // Removed custom rigidBodyOptions to use defaults, like original setup
+    // rigidBodyOptions: {
+    //   colliders: [
+    //     {
+    //       shape: ColliderShape.CAPSULE,
+    //       radius: 0.4,
+    //       halfHeight: 1.0,
+    //       friction: PLAYER_CONSTANTS.GROUND_FRICTION,
+    //     }
+    //   ],
+    // },
     // Removed controllerConfig as it's likely handled by the custom controller or default physics
     // controllerConfig: {
     //   walkSpeed: PLAYER_CONSTANTS.MOVEMENT_SPEED,
@@ -91,18 +87,18 @@ export function setupPlayer(world: World, player: Player): void {
   // --- Start: Explicit Camera Setup for Diagnostics ---
   console.log("Setting camera to THIRD_PERSON for diagnostics...");
   player.camera.setMode(PlayerCameraMode.THIRD_PERSON);
-  player.camera.setOffset({ x: 0, y: 2, z: -8 }); // Standard behind-and-above offset
+  player.camera.setOffset({ x: 0, y: 0, z: -1 }); // Standard behind-and-above offset
   // --- End: Explicit Camera Setup ---
 
-  // Determine the actual spawn position based on config and ground height
+  // Determine the actual spawn position based on config
   const configSpawn = PLAYER_CONFIG.SPAWN_POSITION;
-  const groundY = findGroundHeight(world, configSpawn.X, configSpawn.Z);
-  const spawnPosition = { x: configSpawn.X, y: groundY + 1, z: configSpawn.Z };
+  const spawnPosition = { x: configSpawn.X, y: configSpawn.Y, z: configSpawn.Z };
+
 
   // Spawn the player entity at the calculated position
   playerEntity.spawn(world, spawnPosition);
 
-  console.log(`Player ${player.id} spawned at configured position adjusted for ground height:`, spawnPosition, `(Ground was Y=${groundY})`);
+  console.log(`Player ${player.id} spawned at configured position:`, spawnPosition); // Updated log message
   
   // Send helpful debug message to player
   world.chatManager.sendPlayerMessage(player, 'CyberCrawler: Test blocks placed right beneath you!', '#00FF00');
