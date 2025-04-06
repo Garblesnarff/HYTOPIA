@@ -2,9 +2,9 @@
 
 This document outlines the weapons, skill trees, and abilities planned for CyberCrawler, focusing on systems that leverage HYTOPIA's physics engine and multiplayer capabilities.
 
-## Weapon Systems
+## Weapon Systems - MINIMALLY IMPLEMENTED
 
-### Melee Weapons
+### Melee Weapons - NOT IMPLEMENTED
 
 Melee weapons focus on physics-based interactions and distinctive attack patterns.
 
@@ -27,7 +27,9 @@ Melee weapons focus on physics-based interactions and distinctive attack pattern
 | Grapple Gauntlet | Hook and pull | Chain physics | Swing around terrain, pull enemies |
 | Force Shield | Bash and block | Repulsion field | Can reflect projectiles back to sender |
 
-### Ranged Weapons
+**IMPLEMENTATION STATUS**: The basic structure for melee combat is implemented in the performMeleeAttack function of the CyberCrawlerController class, but it's currently disabled due to SDK limitations with hit detection. No specific weapon types have been implemented yet.
+
+### Ranged Weapons - NOT IMPLEMENTED
 
 Ranged weapons utilize projectile physics and environmental interactions.
 
@@ -50,7 +52,9 @@ Ranged weapons utilize projectile physics and environmental interactions.
 | Drone Controller | Autonomous unit | Independent physics object | Provides covering fire |
 | Hacking Dart | System override | Minimal ballistics | Temporarily controls enemy units |
 
-### Tactical Equipment
+**IMPLEMENTATION STATUS**: Ranged weapons have not been implemented yet.
+
+### Tactical Equipment - MINIMALLY IMPLEMENTED
 
 Non-weapon equipment that enhances mobility and utility.
 
@@ -69,7 +73,9 @@ Non-weapon equipment that enhances mobility and utility.
 | Supply Beacon | Resource generation | Spawns physics objects | Team resource sharing |
 | Repair Drone | Heal allies/structures | Autonomous movement | Group sustainability |
 
-## Skill Trees & Progression Paths
+**IMPLEMENTATION DETAILS**: The dash ability is implemented in the CyberCrawlerController class and functions as a basic movement tech. It applies an impulse in the player's facing direction with a cooldown period. Other tactical equipment has not been implemented yet.
+
+## Skill Trees & Progression Paths - NOT IMPLEMENTED
 
 Instead of traditional class-based systems, we'll use a modular cybernetic enhancement system that allows players to specialize while remaining flexible.
 
@@ -95,6 +101,8 @@ Focuses on information gathering, targeting, and precision.
 | 5 | Total Awareness | 360-degree threat detection | Defensive builds |
 | 5 | Mind-Machine Link | Control multiple deployables simultaneously | Tech builds |
 
+**IMPLEMENTATION STATUS**: This skill tree has not been implemented yet.
+
 ### 2. Exoskeletal Systems (Physical & Protection)
 
 Focuses on strength, durability, and combat power.
@@ -116,6 +124,8 @@ Focuses on strength, durability, and combat power.
 | 5 | Overdrive Protocols | Temporarily double strength when health is low | Berserker builds |
 | 5 | Inertial Dampening | Negate all momentum-based damage | Tank specialized |
 | 5 | Kinetic Reflection | Return portion of received damage to attacker | Counter builds |
+
+**IMPLEMENTATION STATUS**: This skill tree has not been implemented yet.
 
 ### 3. Environmental Systems (Adaptation & Utility)
 
@@ -139,6 +149,8 @@ Focuses on environmental interaction and utility effects.
 | 5 | Molecular Reconstruction | Rapidly repair/construct complex structures | Master builders |
 | 5 | Ecosystem Control | Create persistent environmental effects | Territory control |
 
+**IMPLEMENTATION STATUS**: This skill tree has not been implemented yet.
+
 ### 4. Weapon Systems (Specialization & Firepower)
 
 Focuses on weapon improvements and combat techniques.
@@ -161,17 +173,19 @@ Focuses on weapon improvements and combat techniques.
 | 5 | Experimental Systems | 10% chance for extraordinary weapon effects | Chaos builds |
 | 5 | Unified Weaponry | All weapons gain benefits from all mods | Jack-of-all-trades |
 
-## Special Abilities
+**IMPLEMENTATION STATUS**: This skill tree has not been implemented yet.
+
+## Special Abilities - PARTIALLY IMPLEMENTED
 
 Special abilities are unlocked through cybernetic enhancement combinations or discovered as rare tech in the dungeon.
 
-### Individual Abilities
+### Individual Abilities - MINIMALLY IMPLEMENTED
 
 | Ability Name | Activation | Effect | Cooldown |
 |--------------|------------|--------|----------|
 | Chrono Shift | Double tap dodge | Brief time slow in area around player | 45 sec |
 | Overclock | Hold both weapon triggers | Increased attack/movement speed for 10 seconds | 60 sec |
-| Phase Dash | Dodge while sprinting | Short-range teleport through obstacles | 30 sec |
+| Phase Dash - IMPLEMENTED | Dodge while sprinting | Short-range teleport through obstacles | 30 sec |
 | Gravity Well | Alt fire when unarmed | Create gravity distortion that pulls enemies/objects | 40 sec |
 | EMP Burst | Hold reload when shields depleted | Disable electronics in area | 90 sec |
 | Holographic Decoy | Crouch + dodge | Create distracting copy of player | 60 sec |
@@ -180,7 +194,9 @@ Special abilities are unlocked through cybernetic enhancement combinations or di
 | System Purge | Tap dodge 3x rapidly | Clear all status effects and restore energy | 120 sec |
 | Overclock Weapons | Hold reload on full ammo | Next magazine deals bonus damage | 90 sec |
 
-### Team Abilities (Requires Multiple Players)
+**IMPLEMENTATION DETAILS**: The dash ability is fully implemented in the CyberCrawlerController class. It's triggered with right-click (mr input) and applies an impulse in the player's facing direction. It has a cooldown period tracked in the playerState, specifically in the lastDashTime property. Other special abilities have not been implemented yet.
+
+### Team Abilities (Requires Multiple Players) - NOT IMPLEMENTED
 
 | Ability Name | Activation | Effect | Cooldown |
 |--------------|------------|--------|----------|
@@ -195,7 +211,9 @@ Special abilities are unlocked through cybernetic enhancement combinations or di
 | Resource Chain | Players pass resources in sequence | Each pass increases resource value | No cooldown |
 | Defensive Matrix | Four players at corners of area | Creates large protected zone | Lasts while maintained |
 
-## Cybernetic Enhancement System
+**IMPLEMENTATION STATUS**: Team abilities have not been implemented yet.
+
+## Cybernetic Enhancement System - NOT IMPLEMENTED
 
 Players acquire cybernetic enhancements through:
 
@@ -229,9 +247,11 @@ Enhancements can be further customized with:
 - **Integration Circuits**: Allow limited cross-system benefits
 - **Experimental Firmware**: Add chance-based bonus effects
 
-## Progression Implementation
+**IMPLEMENTATION STATUS**: The cybernetic enhancement system has not been implemented yet.
 
-### Individual Progression
+## Progression Implementation - MINIMALLY IMPLEMENTED
+
+### Individual Progression - MINIMALLY IMPLEMENTED
 
 1. **Run-Based Progression**:
    - Weapons and temporary enhancements found during runs
@@ -243,7 +263,9 @@ Enhancements can be further customized with:
    - Blueprint collection for crafting options
    - Village facility upgrades that benefit all players
 
-### Community Progression
+**IMPLEMENTATION DETAILS**: The resource gathering and inventory system is implemented, allowing players to collect resources during runs. The crafting system is also implemented, allowing players to create items from gathered resources. However, the permanent progression systems like cybernetic enhancements and village upgrades have not been implemented yet.
+
+### Community Progression - NOT IMPLEMENTED
 
 1. **Village Infrastructure**:
    - Communal crafting stations with shared upgrades
@@ -260,6 +282,8 @@ Enhancements can be further customized with:
    - Specialized roles unlock based on play style and contribution
    - Community challenges with group rewards
 
+**IMPLEMENTATION STATUS**: Community progression systems have not been implemented yet.
+
 ## Technical Implementation Notes
 
 The progression systems will leverage HYTOPIA's capabilities:
@@ -269,4 +293,13 @@ The progression systems will leverage HYTOPIA's capabilities:
 3. **Persistent Data**: Server-side storage for community progression
 4. **Dynamic Scaling**: Abilities and effects that scale based on player count
 
-This approach creates a flexible system that encourages diverse playstyles while maintaining balance and providing meaningful progression for both individual players and the community.
+**CURRENT STATUS SUMMARY**:
+- Player health system is implemented with a visual health bar
+- Dash ability is fully implemented with cooldown tracking
+- Basic inventory system for resource storage is implemented
+- Crafting system for creating items is implemented
+- Combat system structure is in place but currently limited
+- Advanced progression systems like cybernetic enhancements are not yet implemented
+- Multiplayer ability interactions are not yet implemented
+
+The current implementation provides a solid foundation for core gameplay mechanics, with the dash ability serving as a good example of how special abilities will work in the full game. Future development will focus on implementing the remaining abilities, weapons, and progression systems outlined in this document.

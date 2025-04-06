@@ -16,7 +16,7 @@ CyberCrawler is a sci-fi rogue-lite dungeon crawler with crafting mechanics buil
 
 ## Game Systems
 
-### 1. Resource Gathering
+### 1. Resource Gathering - IMPLEMENTED
 
 Players can collect various types of resources throughout the game world:
 
@@ -30,33 +30,37 @@ Players can collect various types of resources throughout the game world:
 | Ancient Artifacts | Very Rare | Boss rewards, hidden areas | Special abilities |
 | Nanobots | Rare | Research facilities | Repairs, cybernetic upgrades |
 
-### 2. Crafting System
+**IMPLEMENTED**: Scrap Metal and Mutated Plants are fully implemented and can be gathered from the world. Both resources are spawned at predefined locations in the world (using the spawnMutatedPlants and spawnScrapMetal functions). They use appropriate 3D models and are added to the player's inventory upon collection. The resource database includes definitions for all planned resources, but only these two are currently spawned and gatherable.
+
+### 2. Crafting System - PARTIALLY IMPLEMENTED
 
 The crafting system allows players to create items using gathered resources. Different crafting stations enable different types of items:
 
 #### Crafting Stations
 
-1. **Basic Workbench**
+1. **Basic Workbench - IMPLEMENTED**
    - First station available
    - Crafts simple tools, weapons, and structural elements
    - Required resources: Mostly scrap metal
 
-2. **Cybernetics Lab**
+2. **Cybernetics Lab - TO BE IMPLEMENTED**
    - Creates and installs cybernetic enhancements
    - Requires: Tech components, rare metals
    - Allows character customization and ability upgrades
 
-3. **Tech Workshop**
+3. **Tech Workshop - TO BE IMPLEMENTED**
    - Creates electronic gadgets and advanced weapons
    - Requires: Tech components, energy cells
    - Produces ranged weapons and utility items
 
-4. **Chemistry Station**
+4. **Chemistry Station - TO BE IMPLEMENTED**
    - Creates healing items, buffs, and special concoctions
    - Requires: Mutated plants, energy cells
    - Produces consumables that provide temporary effects
 
-### 3. Character Progression
+**IMPLEMENTED**: The Basic Workbench crafting table is fully implemented as the CraftingTableEntity class. Players can approach crafting tables and interact with them (using the 'E' key) to open a crafting interface. The crafting system has a complete recipe database with multiple craftable items across different categories. The CraftingManager singleton class handles all crafting operations, including checking for required materials, processing crafting requests, and updating the player's inventory. The crafting UI is also implemented, showing available recipes, required materials (with quantities owned), and providing visual feedback during the crafting process.
+
+### 3. Character Progression - PARTIALLY IMPLEMENTED
 
 Player progression occurs through several systems:
 
@@ -75,7 +79,9 @@ Player progression occurs through several systems:
 - Combat techniques and strategies
 - Dungeon layout recognition
 
-### 4. Combat System
+**IMPLEMENTED**: Basic player health system and dash ability have been fully implemented. The health system includes a max health of 100 and a visual health bar in the HUD, implemented as a 3D SceneUI element that follows the player. The dash ability is implemented in the CyberCrawlerController (which extends PlayerEntityController) and is triggered with right-click. The dash has a cooldown period tracked in the playerState. Players can gather resources which are properly stored in their inventory using the InventoryManager. The more advanced progression elements like cybernetic enhancements are not yet implemented.
+
+### 4. Combat System - PARTIALLY IMPLEMENTED
 
 Combat is real-time and skill-based, utilizing the HYTOPIA physics system:
 
@@ -99,7 +105,9 @@ Combat is real-time and skill-based, utilizing the HYTOPIA physics system:
 - Multiple attack patterns and phases
 - Special rewards for defeating bosses
 
-### 5. Dungeon Generation
+**IMPLEMENTED**: The core structure for the combat system is in place but currently disabled due to SDK limitations. The CyberCrawlerController includes a performMeleeAttack function that will be enabled once proper hit detection is available. The current implementation uses raycast for hit detection and includes placeholder logic for damage calculation. Enemy types have been designed but are not yet implemented. The combat system is structured to work with the HYTOPIA physics system but requires further development before it's fully functional.
+
+### 5. Dungeon Generation - PARTIALLY IMPLEMENTED
 
 The dungeon is procedurally generated using multiple algorithms:
 
@@ -122,7 +130,9 @@ The dungeon is procedurally generated using multiple algorithms:
 - Resource quality increases with depth
 - Environmental hazards become more dangerous
 
-### 6. Multiplayer Interactions
+**IMPLEMENTED**: World generation with a complete 500x500 block map is implemented in the world-map.ts file. The world includes defined areas (village center, player house, tech district, etc.) and various terrain features like hills, valleys, and water bodies. Connections between areas via paths are implemented with proper block placement. The world generation includes functions for area delineation, terrain feature creation, and path connection. A block type registry system is also implemented to support different block types in the world. The procedural dungeon generation inside dungeon areas is not yet implemented - currently only the surface world generation is working.
+
+### 6. Multiplayer Interactions - TO BE IMPLEMENTED
 
 The game supports multiplayer with various interaction types:
 
@@ -140,6 +150,8 @@ The game supports multiplayer with various interaction types:
 - Multiple players can contribute to village development
 - Specialized roles (combat, resource gathering, crafting)
 
+**IMPLEMENTATION STATUS**: Basic player join/leave handling is implemented in the main index.ts file. Players can connect to the server and see each other, but advanced multiplayer features like cooperative play, resource sharing, and PvP elements are not yet implemented.
+
 ## Art Style
 
 CyberCrawler features a voxel-based cyberpunk aesthetic:
@@ -156,21 +168,23 @@ CyberCrawler features a voxel-based cyberpunk aesthetic:
 - Metal: Chrome, bronze, and copper tones
 - Decay: Rust, grime, and corrosion
 
-## User Interface
+## User Interface - PARTIALLY IMPLEMENTED
 
-### HUD Elements
-- Health/Shield indicators
-- Resource inventory
-- Minimap
-- Active equipment/abilities
-- Objective markers
+### HUD Elements - PARTIALLY IMPLEMENTED
+- Health/Shield indicators - IMPLEMENTED
+- Resource inventory - PARTIALLY IMPLEMENTED
+- Minimap - TO BE IMPLEMENTED
+- Active equipment/abilities - TO BE IMPLEMENTED
+- Objective markers - TO BE IMPLEMENTED
 
-### Menus
-- Inventory management
-- Crafting interface
-- Character upgrades
-- Map overview
-- Settings
+### Menus - PARTIALLY IMPLEMENTED
+- Inventory management - PARTIALLY IMPLEMENTED
+- Crafting interface - IMPLEMENTED
+- Character upgrades - TO BE IMPLEMENTED
+- Map overview - TO BE IMPLEMENTED
+- Settings - TO BE IMPLEMENTED
+
+**IMPLEMENTED**: The health bar is fully implemented as a 3D SceneUI element attached to the player. It displays current health as both a visual bar and text. The crafting interface is fully implemented with support for viewing available recipes, required materials (showing both required and owned quantities), and crafting items. The basic inventory system is implemented in the InventoryManager class which tracks gathered resources, but the visual inventory UI needs further development. Interface elements are defined in the index.html file in the UI assets directory.
 
 ## Audio Design
 
@@ -181,32 +195,36 @@ CyberCrawler features a voxel-based cyberpunk aesthetic:
 - **UI**: Menu navigation, notifications
 - **Music**: Dynamic soundtrack that adapts to gameplay
 
+**IMPLEMENTATION STATUS**: Basic ambient background music is implemented in the main index.ts file. Additional audio categories and dynamic audio features have not yet been implemented.
+
 ## Technical Requirements
 
-### HYTOPIA SDK Implementation
+### HYTOPIA SDK Implementation - IMPLEMENTED
 - Entity system for all game objects
 - Physics-based interactions
 - Multiplayer synchronization
 - Procedural generation algorithms
 
+**IMPLEMENTED**: The game is successfully integrated with the HYTOPIA SDK, utilizing its entity system, physics, and world generation capabilities. The player controller extends HYTOPIA's PlayerEntityController to add custom abilities like dash. Resource entities and crafting tables are implemented as custom Entity classes. The SceneUI system is used for health bars and other UI elements. World generation uses the HYTOPIA chunk and block systems. The project structure follows good practices for organization and modularity.
+
 ## Development Roadmap
 
-### Phase 1: Core Mechanics (Days 1-4)
-- Basic player movement and combat
-- Simple procedural dungeon generation
-- Resource gathering mechanics
+### Phase 1: Core Mechanics (Days 1-4) - COMPLETED
+- Basic player movement and combat - IMPLEMENTED
+- Simple procedural dungeon generation - PARTIALLY IMPLEMENTED
+- Resource gathering mechanics - IMPLEMENTED
 
-### Phase 2: Systems Development (Days 5-8)
-- Crafting system implementation
-- Character progression
-- Enemy AI and variety
+### Phase 2: Systems Development (Days 5-8) - IN PROGRESS
+- Crafting system implementation - IMPLEMENTED
+- Character progression - PARTIALLY IMPLEMENTED
+- Enemy AI and variety - NOT STARTED
 
-### Phase 3: Content Creation (Days 9-11)
+### Phase 3: Content Creation (Days 9-11) - NOT STARTED
 - Expanded dungeons and environments
 - Additional weapons and items
 - Boss encounters
 
-### Phase 4: Multiplayer and Polish (Days 12-14)
+### Phase 4: Multiplayer and Polish (Days 12-14) - NOT STARTED
 - Multiplayer functionality
 - UI refinement
 - Balance adjustments
