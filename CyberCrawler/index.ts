@@ -8,6 +8,7 @@
  * @author CyberCrawler Team
  */
 
+
 import {
   startServer,
   Audio,
@@ -16,6 +17,7 @@ import {
   World, // Added World
   Player, // Added Player
   PlayerUIEvent, // Added PlayerUIEvent
+  SceneUI, // Import SceneUI for health bar
 } from 'hytopia';
 
 // Import our world generation code
@@ -26,6 +28,11 @@ import { CraftingManager } from './src/crafting/crafting-manager'; // Import Cra
 
 // We'll keep the map import as a fallback
 import worldMap from './assets/map.json';
+
+/**
+ * Map to store player health bar SceneUI instances
+ */
+const playerHealthBars = new Map();
 
 /**
  * Start the CyberCrawler game server
@@ -64,6 +71,32 @@ startServer(world => {
 
     // Load our game UI for this player
     player.ui.load('ui/index.html');
+
+    // Get the player's entity (assumes one main entity per player)
+    const playerEntities = world.entityManager.getPlayerEntitiesByPlayer(player);
+    const playerEntity = playerEntities[0];
+
+    if (playerEntity) {
+      const playerHealthBar = new SceneUI({
+        templateId: 'player-healthbar',
+        attachedToEntity: playerEntity,
+        offset: { x: 0, y: 2, z: 0 },
+        state: {
+          health: 100,
+          maxHealth: 100
+        }
+      });
+      playerHealthBar.load(world);
+      playerHealthBars.set(player.id, playerHealthBar);
+
+      // TODO: When the player's health changes, update the Scene UI:
+      // playerHealthBar.setState({ health: newHealth });
+    } else {
+      console.warn(`No entity found for player ${player.id}, cannot attach health bar`);
+    }
+
+    // TODO: When the player's health changes, update the Scene UI:
+    // playerHealthBar.setState({ health: newHealth });
 
     // Setup listener for UI events *after* the UI has loaded
     if (player.ui) {
