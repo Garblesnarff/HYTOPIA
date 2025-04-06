@@ -3,7 +3,7 @@
  * An interactive entity that players can use to access the crafting system.
  */
 
-import { Entity, EntityOptions, Player, World, EntityEvent } from 'hytopia'; // Re-added EntityEvent
+import { Entity, EntityOptions, Player, World, EntityEvent, RigidBodyType, ColliderShape } from 'hytopia'; // Re-added EntityEvent, added physics enums
 // Import CraftingManager to handle UI opening/closing
 import { CraftingManager } from '../crafting-manager';
 
@@ -30,6 +30,16 @@ export class CraftingTableEntity extends Entity {
     const combinedOptions: EntityOptions = {
       ...options, // Pass through all base options provided
       ...defaultSpecificOptions, // Apply defaults for specific options
+      rigidBodyOptions: {
+        type: RigidBodyType.FIXED,
+        colliders: [
+          {
+            shape: ColliderShape.BLOCK,
+            halfExtents: { x: 0.5, y: 0.5, z: 0.5 },
+            relativePosition: { x: 0, y: 0, z: 0 }
+          }
+        ]
+      }
     };
 
     super(combinedOptions);

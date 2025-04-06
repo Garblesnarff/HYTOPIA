@@ -37,7 +37,7 @@ export class CraftingManager {
             // Define locations here to ensure Vector3 is ready
             const CRAFTING_TABLE_LOCATIONS: Vector3[] = [
                  // new Vector3(5, 5, 5), // Using test coordinates
-                 new Vector3(130, 3, 23), // Reverted to original desired location (Y=3)
+                 new Vector3(130, 2, 23), // Lowered Y from 3 to 1 to place crafting table on ground
                 // Add more locations if desired: new Vector3(x, y, z),
             ];
             console.log("[CraftingManager] Initializing crafting tables at locations:", CRAFTING_TABLE_LOCATIONS); // Log 1
