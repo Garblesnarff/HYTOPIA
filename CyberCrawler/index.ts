@@ -26,6 +26,7 @@ import { PLAYER_CONFIG } from './src/constants/world-config';
 import { setupPlayer } from './src/player/playerController'; // Import setupPlayer
 import { CraftingManager } from './src/crafting/crafting-manager'; // Import CraftingManager
 import { spawnMutatedPlants } from './src/world/entities/spawn-mutated-plants';
+import { spawnScrapMetal } from './src/world/entities/spawn-scrap-metal';
 
 // We'll keep the map import as a fallback
 import worldMap from './assets/map.json';
@@ -68,6 +69,15 @@ startServer(world => {
     console.log("[Root Index] Mutated plants spawned.");
   } catch (error) {
     console.error("[Root Index] ERROR during mutated plant spawn:", error);
+  }
+
+  // Spawn gatherable scrap metal
+  try {
+    console.log("[Root Index] Spawning scrap metal...");
+    spawnScrapMetal(world);
+    console.log("[Root Index] Scrap metal spawned.");
+  } catch (error) {
+    console.error("[Root Index] ERROR during scrap metal spawn:", error);
   }
 
   /**
