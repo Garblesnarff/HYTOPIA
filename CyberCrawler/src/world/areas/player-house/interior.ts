@@ -66,7 +66,7 @@ export function buildInterior(
   );
   placeBlock(
     world,
-    { x: houseStart.x + width / 2, y: houseStart.y + 1, z: houseStart.z + depth / 2 },
+    { x: houseStart.x + width / 2, y: houseStart.y + 2, z: houseStart.z + depth / 2 },
     BLOCK_TYPES.AIR
   );
   
@@ -74,8 +74,8 @@ export function buildInterior(
   // Bed
   placeCuboid(
     world,
-    { x: houseStart.x + 2, y: houseStart.y, z: houseStart.z + 2 },
-    { width: 3, height: 1, depth: 2 },
+    { x: houseStart.x + 3, y: houseStart.y, z: houseStart.z + 2 },
+    { width: 4, height: 1, depth: 3 },
     BLOCK_TYPES.WOOD_PLANKS
   );
   

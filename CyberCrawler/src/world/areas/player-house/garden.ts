@@ -43,6 +43,18 @@ export function buildGarden(world: World): void {
   const startX = WORLD_ORIGIN.X + area.startX;
   const startZ = WORLD_ORIGIN.Z + area.startZ;
   
+  // Compute house bounding box (same as house-structure.ts)
+  const houseWidth = 14;
+  const houseDepth = 12;
+  const houseX1 = startX + area.width / 2 - houseWidth / 2;
+  const houseX2 = houseX1 + houseWidth;
+  const houseZ1 = startZ + area.depth / 2 - houseDepth / 2;
+  const houseZ2 = houseZ1 + houseDepth;
+
+  function isInsideHouse(x: number, z: number): boolean {
+    return x >= houseX1 && x <= houseX2 && z >= houseZ1 && z <= houseZ2;
+  }
+
   // Garden position base
   const gardenStartX = startX + 10;
   const gardenStartZ = startZ + 10;
@@ -55,7 +67,9 @@ export function buildGarden(world: World): void {
   const tree1GroundBlockId = world.chunkLattice.getBlockId({ x: tree1X, y: tree1GroundY, z: tree1Z });
   const tree1SpaceAboveId = world.chunkLattice.getBlockId({ x: tree1X, y: tree1GroundY + 1, z: tree1Z });
 
-  if ((tree1GroundBlockId === BLOCK_TYPES.GRASS || tree1GroundBlockId === BLOCK_TYPES.DIRT) && tree1SpaceAboveId === BLOCK_TYPES.AIR) {
+  if (!isInsideHouse(tree1X, tree1Z) &&
+      (tree1GroundBlockId === BLOCK_TYPES.GRASS || tree1GroundBlockId === BLOCK_TYPES.DIRT) &&
+      tree1SpaceAboveId === BLOCK_TYPES.AIR) {
     placeTree(
       world,
       { x: tree1X, y: tree1GroundY + 1, z: tree1Z }, // Start tree one block above ground
@@ -72,7 +86,9 @@ export function buildGarden(world: World): void {
   const tree2GroundBlockId = world.chunkLattice.getBlockId({ x: tree2X, y: tree2GroundY, z: tree2Z });
   const tree2SpaceAboveId = world.chunkLattice.getBlockId({ x: tree2X, y: tree2GroundY + 1, z: tree2Z });
 
-  if ((tree2GroundBlockId === BLOCK_TYPES.GRASS || tree2GroundBlockId === BLOCK_TYPES.DIRT) && tree2SpaceAboveId === BLOCK_TYPES.AIR) {
+  if (!isInsideHouse(tree2X, tree2Z) &&
+      (tree2GroundBlockId === BLOCK_TYPES.GRASS || tree2GroundBlockId === BLOCK_TYPES.DIRT) &&
+      tree2SpaceAboveId === BLOCK_TYPES.AIR) {
     placeTree(
       world,
       { x: tree2X, y: tree2GroundY + 1, z: tree2Z }, // Start tree one block above ground

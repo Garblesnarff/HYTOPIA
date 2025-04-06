@@ -66,15 +66,15 @@ export function buildMainHouse(world: World): void {
   const houseStartZ = centerZ - houseDepth / 2;
   // Find the actual ground height at the house's corner
   const groundY = findGroundHeight(world, houseStartX, houseStartZ); 
-  const houseStartY = groundY; // Place walls starting AT ground level
+  const houseStartY = groundY + 1; // Raise house 1 block above ground level
   console.log(`Placing player house foundation at Y=${houseStartY} (Ground was Y=${groundY})`);
 
-  // Foundation platform - Placed at groundY - 1
+  // Foundation platform - Placed at groundY (now 1 block below house floor)
   placeCuboid(
     world,
     { 
       x: houseStartX - 2, 
-      y: houseStartY - 1, 
+      y: houseStartY - 1,  // foundation remains 1 block below new floor
       z: houseStartZ - 2 
     },
     { 
@@ -95,10 +95,10 @@ export function buildMainHouse(world: World): void {
     BLOCK_TYPES.BRICK
   );
   
-  // Wooden floor - Place explicitly at groundY
+  // Wooden floor - Raise floor to new house level
   placeFloor(
     world,
-    { x: houseStartX + 1, y: groundY, z: houseStartZ + 1 }, // Use groundY for floor level
+    { x: houseStartX + 1, y: houseStartY, z: houseStartZ + 1 }, // floor at raised level
     houseWidth - 2,
     houseDepth - 2,
     BLOCK_TYPES.WOOD_PLANKS
@@ -109,13 +109,13 @@ export function buildMainHouse(world: World): void {
   const doorZ = houseStartZ + houseDepth - 1; // Wall is at max Z, opening is at max Z
   placeDetailedDoor(
     world,
-    { x: doorX, y: groundY, z: doorZ }, // Position is floor block *under* opening (at groundY)
+    { x: doorX, y: houseStartY, z: doorZ }, // door at raised floor level
     'north', // Wall runs E-W, door faces +Z
     BLOCK_TYPES.LOG // Frame material
   );
 
   // Add detailed windows (2x2 size)
-  // Bottom of window opening starts at houseStartY + 1 = groundY + 1
+  // Bottom of window opening starts at houseStartY + 1
   const windowBottomY = houseStartY + 1;
   // Front windows (fixed Z = doorZ, wall runs along X)
   placeDetailedWindow(world, { x: doorX - 4, y: windowBottomY, z: doorZ }, 2, 2, 'x', BLOCK_TYPES.LOG);
