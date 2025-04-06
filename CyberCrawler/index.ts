@@ -25,6 +25,7 @@ import { generateWorldMap } from './src/world/world-map';
 import { PLAYER_CONFIG } from './src/constants/world-config';
 import { setupPlayer } from './src/player/playerController'; // Import setupPlayer
 import { CraftingManager } from './src/crafting/crafting-manager'; // Import CraftingManager
+import { spawnMutatedPlants } from './src/world/entities/spawn-mutated-plants';
 
 // We'll keep the map import as a fallback
 import worldMap from './assets/map.json';
@@ -60,6 +61,14 @@ startServer(world => {
       console.error("[Root Index] ERROR during CraftingManager init:", error);
   }
 
+  // Spawn gatherable mutated plants
+  try {
+    console.log("[Root Index] Spawning mutated plants...");
+    spawnMutatedPlants(world);
+    console.log("[Root Index] Mutated plants spawned.");
+  } catch (error) {
+    console.error("[Root Index] ERROR during mutated plant spawn:", error);
+  }
 
   /**
    * Handle player joining the game
