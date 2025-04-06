@@ -84,6 +84,12 @@ export function setupPlayer(world: World, player: Player): void {
   // Removed incorrect player.on(PlayerEvent.INPUT, ...) handler.
   // Input handling will be done via the custom CyberCrawlerController.
 
+  // Load the player UI
+  console.log(`Loading UI for player ${player.id}...`);
+  console.log("=== setupPlayer() CALLED, loading UI ===");
+  player.ui.load('ui/index.html');
+  console.log(`[setupPlayer] Called player.ui.load('ui/index.html') for player ${player.id}`);
+
   // --- Start: Explicit Camera Setup for Diagnostics ---
   console.log("Setting camera to THIRD_PERSON for diagnostics...");
   player.camera.setMode(PlayerCameraMode.THIRD_PERSON);

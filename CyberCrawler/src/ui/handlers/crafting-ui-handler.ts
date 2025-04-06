@@ -4,6 +4,9 @@
  * and communicates with the server-side CraftingManager via UI events.
  */
 
+// Declare the hytopia global object provided by the Hytopia client environment
+declare const hytopia: any;
+
 // --- Type Definitions (Mirroring Server-Side) ---
 // Export these interfaces so they can be imported by the server if needed
 
@@ -63,7 +66,7 @@ let isCrafting: boolean = false;
  * This should be called when the UI document is ready.
  */
 function initializeCraftingUI(): void {
-    console.log("Initializing Crafting UI Handler...");
+    console.log("[UI LOG] initializeCraftingUI called."); // Log 1
     recipeListElement = document.getElementById('recipe-list') as HTMLUListElement;
     materialsListElement = document.getElementById('materials-list') as HTMLUListElement;
     selectedRecipeNameElement = document.getElementById('selected-recipe-name');
@@ -152,6 +155,7 @@ function updateCraftingInterface(data: CraftingUIData): void {
         clearRecipeDetails();
     }
      // Show the UI body element
+     console.log("[UI LOG] Setting body display to block."); // Log 5
     document.body.style.display = 'block';
 }
 
@@ -374,16 +378,21 @@ function sendToServer(data: object): void {
 /**
  * Handles messages received from the server-side script.
  * This function needs to be set up based on HYTOPIA's UI communication mechanism.
- * @param event The event object containing the data.
+ * @param data The data object received from the server via hytopia.onData.
  */
-function handleServerMessage(event: any): void {
-    // Placeholder: Replace with actual HYTOPIA UI event listener setup
-    console.log("Received message:", event);
+function handleServerMessage(data: any): void {
+    console.log("[UI LOG] handleServerMessage called with data:", data); // Log 3
 
-    // Example structure assuming data is in event.data or similar
-    const data = event.data?.payload || event.data; // Adjust based on actual structure
+    // Data should be the object sent by player.ui.sendData directly
+    // const data = event.data?.payload || event.data; // No longer need this parsing
+
+    if (!data || typeof data !== 'object') {
+        console.warn("Received invalid data structure from server.");
+        return;
+    }
 
     if (data?.type === 'update-crafting-ui') {
+        // Assuming payload structure is still used for this specific type
         updateCraftingInterface(data.payload as CraftingUIData);
     } else if (data?.type === 'crafting-started') {
         // Server confirms crafting started, potentially with actual time
@@ -413,9 +422,11 @@ function handleServerMessage(event: any): void {
                  updateCraftButtonState(currentRecipe);
              }
     } else if (data?.type === 'show-crafting-ui') {
+        console.log("[UI LOG] Received 'show-crafting-ui' message."); // Log 4
         // Server explicitly tells the UI to show itself and provides data
         updateCraftingInterface(data.payload as CraftingUIData);
-        document.body.style.display = 'block';
+        // Note: updateCraftingInterface now handles setting display to block
+        // document.body.style.display = 'block';
         // Reset selection when opening
         selectRecipe(null);
     } else if (data?.type === 'hide-crafting-ui') {
@@ -441,21 +452,24 @@ function findRecipeById(recipeId: string): ClientCraftingRecipe | undefined {
 // Assuming HYTOPIA provides a way to run code when the UI is loaded
 // and a way to listen for messages.
 
-// Example: Using DOMContentLoaded and window message listener
+// Example: Using DOMContentLoaded
 document.addEventListener('DOMContentLoaded', initializeCraftingUI);
 
-// Example: Listening for messages (adapt to HYTOPIA's mechanism)
-window.addEventListener('message', (event) => {
-    // Add origin check for security if applicable
-    // if (event.origin !== 'expected-origin') return;
-
-    if (event.data?.type?.startsWith('hytopia-')) { // Check for a potential Hytopia message type
-         handleServerMessage(event.data);
-    } else if (event.data?.type === 'update-crafting-ui' || event.data?.type === 'show-crafting-ui' || event.data?.type === 'hide-crafting-ui') {
-        // Handle messages potentially sent directly for testing/dev
-        handleServerMessage(event.data);
-    }
-});
+// Use hytopia.onData to listen for messages from the server
+if (typeof hytopia !== 'undefined' && hytopia.onData) {
+    console.log("[UI LOG] hytopia object found. Registering hytopia.onData listener."); // Log 2a
+    hytopia.onData(handleServerMessage);
+    console.log("[UI LOG] hytopia.onData listener registered."); // Log 2b
+} else {
+    console.error("[UI LOG] hytopia object or hytopia.onData not available. UI cannot receive server messages.");
+    // Fallback for testing outside Hytopia environment?
+    window.addEventListener('message', (event) => {
+         if (event.data?.type?.startsWith('hytopia-')) {
+             handleServerMessage(event.data.payload); // Assuming payload structure for testing
+         }
+    });
+    console.warn("Using window.message listener as fallback.");
+}
 
 // Expose functions needed by the HYTOPIA environment if necessary
 // (e.g., window.hytopiaUI.showCrafting = updateCraftingInterface;)

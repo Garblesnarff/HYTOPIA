@@ -62,23 +62,28 @@ startServer(world => {
     // Use setupPlayer from playerController for consistent setup (includes inventory state)
     setupPlayer(world, player);
 
-    // Load our game UI for this player (setupPlayer might already do this, check playerController.ts if needed)
-    // Assuming setupPlayer doesn't load UI, load it here. If it does, this line can be removed.
-    // player.ui.load('ui/index.html'); // Let's assume setupPlayer handles UI loading for now based on previous context.
+    // Load our game UI for this player
+    player.ui.load('ui/index.html');
 
-    // Setup listener for UI events from this player
-    // Add a small delay or check to ensure player.ui is ready after setupPlayer potentially loads it
-    setTimeout(() => {
-        if (player.ui) {
-            player.ui.on(PlayerUIEvent.DATA, ({ data }) => {
-                // Route UI events to the CraftingManager
-                CraftingManager.instance.handlePlayerUIEvent(player, data);
-            });
-            console.log(`Registered UI event listener for player ${player.id}`);
-        } else {
-            console.error(`Failed to register UI event listener for player ${player.id}: player.ui is not available after setup.`);
-        }
-    }, 500); // Small delay to allow UI load potentially initiated by setupPlayer
+    // Setup listener for UI events *after* the UI has loaded
+    if (player.ui) {
+        // Use LOAD event name based on TS suggestion
+        player.ui.once(PlayerUIEvent.LOAD, () => {
+             console.log(`UI loaded for player ${player.id}. Registering DATA listener.`);
+             player.ui.on(PlayerUIEvent.DATA, ({ data }) => {
+                 // Route UI events to the CraftingManager
+                 CraftingManager.instance.handlePlayerUIEvent(player, data);
+             });
+        });
+         // Removed ERROR listener for now as the event name is uncertain
+         // player.ui.on(PlayerUIEvent.ERROR, ({ error }) => {
+         //     console.error(`UI Error for player ${player.id}:`, error);
+         // });
+    } else {
+        // This case might happen if setupPlayer failed to load UI or player disconnected quickly
+        console.error(`Cannot setup UI listeners for player ${player.id}: player.ui is not available.`);
+    }
+
 
     // Send welcome messages (setupPlayer might also send messages, adjust as needed)
     // world.chatManager.sendPlayerMessage(player, 'Welcome to CyberCrawler!', '#00FF00'); // Use # prefix for color

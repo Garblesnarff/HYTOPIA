@@ -1,102 +1,289 @@
-<!--
-This is a basic boilerplate example of how to implement simple game UI,
-and also configure additional buttons for mobile compatibility.
--->
-
+<!-- Combined Crafting UI Script -->
 <script>
-  // Handle interact button touch / untouch
-  const mobileInteractButton = document.getElementById('mobile-interact-button');
-  mobileInteractButton.addEventListener('touchstart', e => {
-    e.preventDefault(); // Prevents mobile highlight/select/copy popup behaviors
-    mobileInteractButton.classList.add('active'); // more immediate feedback to add/remove active class
-    hytopia.pressInput('ml', true);
-  });
+console.log("✨ LOADED Hytopia-Compliant Crafting UI ✨");
 
-  mobileInteractButton.addEventListener('touchend', e => {
-    e.preventDefault();
-    mobileInteractButton.classList.remove('active');
-    hytopia.pressInput('ml', false);
-  });
+// Register data handler immediately
+hytopia.onData(data => {
+    console.log("[UI] Received data:", data);
+    if (data.type === 'hide-crafting-ui') {
+        console.log("[UI] Received hide-crafting-ui event");
+        craftingUIWrapper.style.display = 'none';
+        selectedRecipeId = null;
+        isCrafting = false;
+    }
+    if (data.type === 'update-crafting-ui') {
+        updateCraftingInterface(data.payload);
+    } else if (data.type === 'show-crafting-ui') {
+        updateCraftingInterface(data.payload);
+        selectRecipe(null);
+    } else if (data.type === 'hide-crafting-ui') {
+        craftingUIWrapper.style.display = 'none';
+        selectedRecipeId = null;
+        isCrafting = false;
+    } else if (data.type === 'crafting-started') {
+        const recipe = findRecipeById(data.recipeId);
+        displayCraftingProgress(recipe?.craftingTime ?? 0);
+    } else if (data.type === 'crafting-complete' || data.type === 'crafting-failed') {
+        hideCraftingProgress();
+        isCrafting = false;
+        const recipe = selectedRecipeId ? findRecipeById(selectedRecipeId) : null;
+        if (recipe) updateCraftButtonState(recipe);
+    }
+});
 
-  // Handle jump button touch / untouch
-  const mobileJumpButton = document.getElementById('mobile-jump-button');
-  mobileJumpButton.addEventListener('touchstart', e => {
-    e.preventDefault();
-    mobileJumpButton.classList.add('active');
-    hytopia.pressInput(' ', true);
-  });
+// Variables
+let craftingUIWrapper = null;
+let recipeList = null;
+let materialsList = null;
+let selectedRecipeName = null;
+let resultName = null;
+let resultDescription = null;
+let craftButton = null;
+let closeButton = null;
+let progressBar = null;
+let progressContainer = null;
 
-  mobileJumpButton.addEventListener('touchend', e => {
-    e.preventDefault();
-    mobileJumpButton.classList.remove('active');
-    hytopia.pressInput(' ', false);
-  });
+let currentRecipes = [];
+let currentInventory = {};
+let selectedRecipeId = null;
+let isCrafting = false;
+
+// Setup UI references
+function setupUI() {
+    craftingUIWrapper = document.getElementById('crafting-ui-wrapper');
+    recipeList = document.getElementById('recipe-list');
+    materialsList = document.getElementById('materials-list');
+    selectedRecipeName = document.getElementById('selected-recipe-name');
+    resultName = document.getElementById('result-name');
+    resultDescription = document.getElementById('result-description');
+    craftButton = document.getElementById('craft-button');
+    closeButton = document.getElementById('close-crafting-ui');
+    progressBar = document.getElementById('progress-bar');
+    progressContainer = document.querySelector('.crafting-progress');
+
+    closeButton.onclick = () => {
+        craftingUIWrapper.style.display = 'none';
+        selectedRecipeId = null;
+        isCrafting = false;
+        if (typeof hytopia !== 'undefined' && hytopia.lockPointer) {
+            hytopia.lockPointer(true);
+        }
+        sendToServer({ type: 'close-crafting-request' });
+    };
+    craftButton.onclick = () => {
+        if (selectedRecipeId && !isCrafting) {
+            sendToServer({ type: 'craft-item', recipeId: selectedRecipeId });
+        }
+    };
+    recipeList.onclick = e => {
+        const item = e.target.closest('.recipe-item');
+        if (item && item.dataset.recipeId) {
+            selectRecipe(item.dataset.recipeId);
+        }
+    };
+}
+
+function sendToServer(data) {
+    if (typeof hytopia !== 'undefined' && hytopia.sendData) {
+        hytopia.sendData(data);
+    } else {
+        window.parent.postMessage({ type: 'hytopia-ui-event', payload: data }, '*');
+    }
+}
+
+function updateCraftingInterface(data) {
+    currentRecipes = data.recipes || [];
+    currentInventory = data.inventory || {};
+    populateRecipeList();
+    if (selectedRecipeId) {
+        const recipe = findRecipeById(selectedRecipeId);
+        if (recipe) {
+            updateRecipeDetails(recipe);
+            updateCraftButtonState(recipe);
+        } else {
+            clearRecipeDetails();
+            selectedRecipeId = null;
+        }
+    } else {
+        clearRecipeDetails();
+    }
+    craftingUIWrapper.style.display = 'block';
+}
+
+function populateRecipeList() {
+    recipeList.innerHTML = '';
+    currentRecipes.forEach(recipe => {
+        const li = document.createElement('li');
+        li.className = 'recipe-item';
+        li.dataset.recipeId = recipe.id;
+        li.textContent = recipe.name;
+        if (recipe.id === selectedRecipeId) li.classList.add('selected');
+        recipeList.appendChild(li);
+    });
+}
+
+function updateRecipeDetails(recipe) {
+    selectedRecipeName.textContent = recipe.name;
+    resultName.textContent = `${recipe.result.name} (x${recipe.result.quantity})`;
+    resultDescription.textContent = recipe.result.description || 'No description.';
+    materialsList.innerHTML = '';
+    recipe.materials.forEach(mat => {
+        const owned = currentInventory[mat.id] || 0;
+        const li = document.createElement('li');
+        li.className = 'material-item';
+        li.style.color = owned >= mat.quantityRequired ? '#00ff00' : '#ff4444';
+        li.innerHTML = `<span>${mat.name}:</span> ${owned} / ${mat.quantityRequired}`;
+        materialsList.appendChild(li);
+    });
+}
+
+function clearRecipeDetails() {
+    selectedRecipeName.textContent = 'Select a Recipe';
+    resultName.textContent = '---';
+    resultDescription.textContent = '---';
+    materialsList.innerHTML = '';
+    craftButton.disabled = true;
+    craftButton.textContent = 'Craft';
+    hideCraftingProgress();
+}
+
+function updateCraftButtonState(recipe) {
+    let canCraft = recipe.materials.every(mat => (currentInventory[mat.id] || 0) >= mat.quantityRequired);
+    craftButton.disabled = !canCraft || isCrafting;
+    craftButton.textContent = isCrafting ? 'Crafting...' : 'Craft';
+}
+
+function selectRecipe(recipeId) {
+    if (isCrafting) return;
+    selectedRecipeId = recipeId;
+    recipeList.querySelectorAll('.recipe-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.recipeId === recipeId);
+    });
+    const recipe = findRecipeById(recipeId);
+    if (recipe) {
+        updateRecipeDetails(recipe);
+        updateCraftButtonState(recipe);
+        hideCraftingProgress();
+    } else {
+        clearRecipeDetails();
+    }
+}
+
+function displayCraftingProgress(time) {
+    if (time <= 0) {
+        hideCraftingProgress();
+        return;
+    }
+    isCrafting = true;
+    craftButton.disabled = true;
+    craftButton.textContent = 'Crafting...';
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressBar.style.transition = 'none';
+    void progressBar.offsetWidth;
+    progressBar.style.transition = `width ${time}s linear`;
+    progressBar.style.width = '100%';
+    setTimeout(() => {
+        hideCraftingProgress();
+        isCrafting = false;
+        const recipe = selectedRecipeId ? findRecipeById(selectedRecipeId) : null;
+        if (recipe) updateCraftButtonState(recipe);
+    }, time * 1000);
+}
+
+function hideCraftingProgress() {
+    progressContainer.style.display = 'none';
+    progressBar.style.width = '0%';
+}
+
+function findRecipeById(id) {
+    return currentRecipes.find(r => r.id === id);
+}
+
+// Setup UI references immediately
+setupUI();
 </script>
 
-<!--
-  HYTOPIA allows you to build completely custom UI using HTML, CSS and Javascript.
-  You can build simple UIs, to highly complex ones. UI capabilities are as powerful
-  as building a regular web page - there are close to no limitations on what is possible.
-
-  Remember, HYTOPIA sandboxes your UI & UI scripts, so external network requests or
-  other unsafe actions likely won't work as you expect in production.
--->
-
-<div class="mobile-controls">
-  <a id="mobile-interact-button" class="mobile-button">
-    <img src="{{CDN_ASSETS_URL}}/icons/target.png" />
-  </a>
-
-  <a id="mobile-jump-button" class="mobile-button">
-    <img src="{{CDN_ASSETS_URL}}/icons/jump.png" />
-  </a>
+<!-- Crafting UI HTML -->
+<div id="crafting-ui-wrapper" style="display:none;">
+    <button class="close-button" id="close-crafting-ui">X</button>
+    <div class="crafting-container">
+        <div class="recipe-list-panel">
+            <h2>Recipes</h2>
+            <ul id="recipe-list"></ul>
+        </div>
+        <div class="details-panel">
+            <h2 id="selected-recipe-name">Select a Recipe</h2>
+            <div class="materials-list">
+                <h3>Required Materials:</h3>
+                <ul id="materials-list"></ul>
+            </div>
+            <div class="result-preview">
+                <h3>Result:</h3>
+                <p id="result-name">---</p>
+                <p id="result-description">---</p>
+            </div>
+            <div class="crafting-progress" style="display: none;">
+                <div class="crafting-progress-bar" id="progress-bar"></div>
+            </div>
+            <button class="craft-button" id="craft-button" disabled>Craft</button>
+        </div>
+    </div>
 </div>
 
 <style>
-  /* By default, we hide the mobile controls */
-  .mobile-controls {
+#crafting-ui-wrapper {
+    font-family: 'Courier New', Courier, monospace;
+    color: #00ff00;
+    background-color: rgba(10, 10, 20, 0.85);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
     display: none;
-  }
-
-  /*
-    We can use the body.mobile class to detect if we're on a mobile device.
-    The HYTOPIA game client will always add this class to the body element when running on a mobile device.
-  */
-  body.mobile .mobile-controls { /* If this css selector matches because we're on mobile, show the mobile controls */
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border: 2px solid #00ff00;
+    box-shadow: 0 0 15px #00ff00 inset;
+    z-index: 50;
+}
+.crafting-container {
     display: flex;
-    gap: 14px;
-    position: fixed;
-    bottom: 40px;
-    right: 40px;
-  }
-
-  /* You can configure and style your buttons however you'd like. This is a minimalistic starting point. */
-  .mobile-button {
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    align-items: center;
-    justify-content: center;
-    display: flex;
-    width: 50px;
-    height: 50px;
-    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform, background-color;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.8);
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-  }
-  
-  .mobile-button img {
-    width: 22px;
-    height: 22px;
-  }
-
-  .mobile-button.active {
-    transform: scale(0.92);
-    background-color: rgba(0, 0, 0, 0.75);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  }  
+    padding: 20px;
+    height: calc(100% - 40px);
+    box-sizing: border-box;
+}
+.recipe-list-panel, .details-panel {
+    border: 1px solid #008080;
+    padding: 15px;
+    margin: 5px;
+    overflow-y: auto;
+}
+.recipe-list-panel { flex: 1; }
+.details-panel { flex: 2; display: flex; flex-direction: column; }
+#crafting-ui-wrapper h2, #crafting-ui-wrapper h3 {
+    color: #ffffff; border-bottom: 1px dashed #00ff00; padding-bottom: 5px; margin-top: 0;
+}
+#crafting-ui-wrapper ul { list-style: none; padding: 0; margin: 0; }
+#crafting-ui-wrapper li.recipe-item {
+    padding: 8px; margin-bottom: 5px; cursor: pointer; border: 1px solid transparent;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+#crafting-ui-wrapper li.recipe-item:hover { background-color: rgba(0, 255, 0, 0.1); border-color: #00ff00; }
+#crafting-ui-wrapper li.recipe-item.selected { background-color: rgba(0, 255, 0, 0.2); border-color: #ffffff; font-weight: bold; }
+#crafting-ui-wrapper .materials-list, #crafting-ui-wrapper .result-preview { margin-bottom: 20px; }
+#crafting-ui-wrapper .material-item span { display: inline-block; min-width: 100px; }
+#crafting-ui-wrapper .craft-button {
+    padding: 10px 20px; background-color: #005050; border: 1px solid #00ff00; color: #00ff00;
+    cursor: pointer; font-size: 1em; margin-top: auto; align-self: center;
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+#crafting-ui-wrapper .craft-button:hover:not(:disabled) { background-color: #008080; box-shadow: 0 0 10px #00ff00; }
+#crafting-ui-wrapper .craft-button:disabled { background-color: #333; color: #777; border-color: #555; cursor: not-allowed; }
+#crafting-ui-wrapper .close-button {
+    position: absolute; top: 10px; right: 10px; background: #550000; color: #ff0000;
+    border: 1px solid #ff0000; padding: 5px 10px; cursor: pointer;
+}
+#crafting-ui-wrapper .close-button:hover { background: #ff0000; color: #000000; }
+#crafting-ui-wrapper .crafting-progress { height: 10px; background-color: #555; margin-top: 10px; border: 1px solid #00ff00; }
+#crafting-ui-wrapper .crafting-progress-bar { height: 100%; width: 0%; background-color: #00ff00; transition: width 0.1s linear; }
 </style>

@@ -93,6 +93,7 @@ export class CraftingManager {
                 }
                 break;
             case 'close-crafting-request':
+                console.log(`[SERVER] Received close-crafting-request from ${player.id}`);
                 this.closePlayerCraftingInterface(player);
                 break;
             case 'request-crafting-data': // Optional: If UI needs to explicitly request data
@@ -149,6 +150,7 @@ export class CraftingManager {
     public openPlayerCraftingInterface(player: Player): void {
         console.log(`Opening crafting interface for player ${player.id}`);
         this.activeCraftingPlayers.add(player.id);
+        player.ui.lockPointer(false);
         this.sendUIData(player); // Send initial data
     }
 
@@ -161,8 +163,8 @@ export class CraftingManager {
         console.log(`Closing crafting interface for player ${player.id}`);
         if (this.activeCraftingPlayers.has(player.id)) {
             this.activeCraftingPlayers.delete(player.id);
-            // Send message to client-side handler to hide the UI using sendData
-            player.ui?.sendData({ type: 'hide-crafting-ui' });
+            player.ui.lockPointer(true);
+            player.ui.sendData({ type: 'hide-crafting-ui' });
         } else {
              console.warn(`Attempted to close crafting UI for player ${player.id}, but they weren't registered as active.`);
         }

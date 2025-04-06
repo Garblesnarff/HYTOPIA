@@ -4,8 +4,8 @@
  */
 
 import { Entity, EntityOptions, Player, World, EntityEvent } from 'hytopia'; // Re-added EntityEvent
-// Import CraftingManager later when it's created to handle UI opening/closing
-// import { CraftingManager } from '../crafting-manager';
+// Import CraftingManager to handle UI opening/closing
+import { CraftingManager } from '../crafting-manager';
 
 // Define specific options for the crafting table separately
 export interface CraftingTableSpecificOptions {
@@ -74,10 +74,11 @@ export class CraftingTableEntity extends Entity {
    * @param player The player for whom to open the interface.
    */
   public openCraftingInterface(player: Player): void {
-    console.log(`CraftingTableEntity ${this.id}: Opening crafting interface for Player ${player.id}`);
-    // TODO: Call CraftingManager.instance.openPlayerCraftingInterface(player);
-    // For now, just send a chat message as placeholder
-    player.world?.chatManager.sendPlayerMessage(player, 'You opened the Crafting Table!', '00FFFF'); // Removed #
+    console.log(`CraftingTableEntity ${this.id}: Requesting CraftingManager to open interface for Player ${player.id}`);
+    // Call the CraftingManager to handle the actual UI opening and data sending
+    CraftingManager.instance.openPlayerCraftingInterface(player);
+    // Optional: Keep chat message for quick feedback, or remove if UI opening is reliable
+    // player.world?.chatManager.sendPlayerMessage(player, 'You opened the Crafting Table!', '00FFFF');
   }
 
   /**
