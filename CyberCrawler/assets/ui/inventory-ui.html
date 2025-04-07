@@ -1,0 +1,134 @@
+<!-- Inventory UI Fragment - Hytopia compliant -->
+<style>
+.inventory-container {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 20px;
+  background-color: rgba(10, 10, 20, 0.85);
+  border: 2px solid #00ff00;
+  box-shadow: 0 0 15px #00ff00 inset;
+  font-family: 'Courier New', Courier, monospace;
+  color: #00ff00;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  margin: 0;
+  overflow-y: auto;
+}
+
+.inventory-header {
+  width: 100%;
+  text-align: center;
+  font-size: 1.5em;
+  margin-bottom: 10px;
+  border-bottom: 1px dashed #00ff00;
+  padding-bottom: 5px;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 64px);
+  grid-gap: 8px;
+  justify-content: center;
+  width: 100%;
+}
+
+.slot {
+  width: 64px;
+  height: 64px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid #008080;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slot img {
+  max-width: 48px;
+  max-height: 48px;
+}
+
+.quantity {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 12px;
+  background: rgba(0,0,0,0.5);
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+.tooltip {
+  display: none;
+  position: absolute;
+  bottom: 70px;
+  left: 0;
+  background: #222;
+  padding: 5px;
+  border: 1px solid #555;
+  font-size: 12px;
+  z-index: 10;
+}
+
+.slot:hover .tooltip {
+  display: block;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #550000;
+  color: #ff0000;
+  border: 1px solid #ff0000;
+  padding: 5px 10px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.close-button:hover {
+  background: #ff0000;
+  color: #000000;
+}
+</style>
+
+<button class="close-button" id="close-inventory-ui">X</button>
+
+<div class="inventory-container">
+  <div class="inventory-header">Inventory</div>
+  <div class="inventory-grid" id="inventory-grid"></div>
+</div>
+
+<script>
+hytopia.onData(({ type, payload }) => {
+  if (type === 'update-inventory') {
+    const grid = document.getElementById('inventory-grid');
+    grid.innerHTML = '';
+    payload.forEach(item => {
+      const slot = document.createElement('div');
+      slot.className = 'slot';
+
+      const img = document.createElement('img');
+      img.src = item.iconReference || '';
+      img.alt = item.name;
+      slot.appendChild(img);
+
+      const qty = document.createElement('div');
+      qty.className = 'quantity';
+      qty.textContent = item.quantity;
+      slot.appendChild(qty);
+
+      const tooltip = document.createElement('div');
+      tooltip.className = 'tooltip';
+      tooltip.textContent = item.name;
+      slot.appendChild(tooltip);
+
+      grid.appendChild(slot);
+    });
+  }
+});
+
+document.getElementById('close-inventory-ui').onclick = () => {
+  hytopia.sendData({ type: 'close-inventory-request' });
+};
+</script>

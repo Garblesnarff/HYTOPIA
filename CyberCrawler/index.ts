@@ -18,15 +18,18 @@ import {
   Player, // Added Player
   PlayerUIEvent, // Added PlayerUIEvent
   SceneUI, // Import SceneUI for health bar
+  BaseEntityControllerEvent,
 } from 'hytopia';
 
 // Import our world generation code
 import { generateWorldMap } from './src/world/world-map';
 import { PLAYER_CONFIG } from './src/constants/world-config';
-import { setupPlayer } from './src/player/playerController'; // Import setupPlayer
+import { setupPlayer, playerStates } from './src/player/playerController'; // Import setupPlayer and playerStates
 import { CraftingManager } from './src/crafting/crafting-manager'; // Import CraftingManager
+
 import { spawnMutatedPlants } from './src/world/entities/spawn-mutated-plants';
 import { spawnScrapMetal } from './src/world/entities/spawn-scrap-metal';
+import { CustomPlayerController } from './src/player/custom-player-controller';
 
 // We'll keep the map import as a fallback
 import worldMap from './assets/map.json';
@@ -35,6 +38,9 @@ import worldMap from './assets/map.json';
  * Map to store player health bar SceneUI instances
  */
 const playerHealthBars = new Map();
+
+// Track which players have inventory open
+const inventoryOpenPlayers = new Set<string>();
 
 /**
  * Start the CyberCrawler game server
@@ -96,6 +102,7 @@ startServer(world => {
     const playerEntity = playerEntities[0];
 
     if (playerEntity) {
+
       const playerHealthBar = new SceneUI({
         templateId: 'player-healthbar',
         attachedToEntity: playerEntity,
@@ -107,6 +114,53 @@ startServer(world => {
       });
       playerHealthBar.load(world);
       playerHealthBars.set(player.id, playerHealthBar);
+
+      // Add inventory toggle on "V" key press without replacing controller
+      const controller = playerEntity.controller;
+      if (controller) {
+        controller.on(BaseEntityControllerEvent.TICK_WITH_PLAYER_INPUT, async ({ input }) => {
+          if (input.v) {
+            input.v = false; // consume key press
+            if (inventoryOpenPlayers.has(player.id)) {
+              player.ui.load('ui/index.html');
+              inventoryOpenPlayers.delete(player.id);
+            } else {
+              player.ui.load('ui/inventory-ui.html');
+              inventoryOpenPlayers.add(player.id);
+
+              // Send inventory data
+              try {
+                const playerState = playerStates.get(player.id);
+                const inventory = playerState?.inventory || [];
+
+                const { getResourceById } = await import('./src/crafting/resources/resource-database.js');
+
+                const inventoryMap = new Map();
+                inventory.forEach(item => {
+                  const existing = inventoryMap.get(item.itemId);
+                  if (existing) {
+                    existing.quantity += item.quantity;
+                  } else {
+                    const resource = getResourceById(item.itemId);
+                    inventoryMap.set(item.itemId, {
+                      name: resource?.name || item.itemId,
+                      quantity: item.quantity,
+                      iconReference: resource?.iconReference || '',
+                    });
+                  }
+                });
+
+                const { prepareInventoryUIData } = await import('./src/ui/handlers/inventory-ui-handler.js');
+                const uiData = prepareInventoryUIData(inventoryMap);
+
+                player.ui.sendData({ type: 'update-inventory', payload: uiData });
+              } catch (error) {
+                console.error('Error sending inventory data:', error);
+              }
+            }
+          }
+        });
+      }
 
       // TODO: When the player's health changes, update the Scene UI:
       // playerHealthBar.setState({ health: newHealth });
@@ -125,6 +179,11 @@ startServer(world => {
              player.ui.on(PlayerUIEvent.DATA, ({ data }) => {
                  // Route UI events to the CraftingManager
                  CraftingManager.instance.handlePlayerUIEvent(player, data);
+
+                 // Handle inventory close request
+                 if (data.type === 'close-inventory-request') {
+                   player.ui.load('ui/index.html');
+                 }
              });
         });
          // Removed ERROR listener for now as the event name is uncertain
@@ -159,6 +218,45 @@ startServer(world => {
     world.entityManager.getPlayerEntitiesByPlayer(player).forEach(entity => {
       entity.applyImpulse({ x: 0, y: 20, z: 0 });
     });
+  });
+
+  /**
+   * Inventory command - open inventory UI
+   */
+  world.chatManager.registerCommand('/inventory', async player => {
+    try {
+      player.ui.load('ui/inventory-ui.html');
+
+      const playerState = playerStates.get(player.id);
+      const inventory = playerState?.inventory || [];
+
+      // Build inventory map: itemId -> { name, quantity, iconReference }
+      const inventoryMap = new Map();
+      const { getResourceById } = await import('./src/crafting/resources/resource-database.js');
+
+      inventory.forEach(item => {
+        const existing = inventoryMap.get(item.itemId);
+        if (existing) {
+          existing.quantity += item.quantity;
+        } else {
+          const resource = getResourceById(item.itemId);
+          inventoryMap.set(item.itemId, {
+            name: resource?.name || item.itemId,
+            quantity: item.quantity,
+            iconReference: resource?.iconReference || '',
+          });
+        }
+      });
+
+      // Prepare UI data
+      const { prepareInventoryUIData } = await import('./src/ui/handlers/inventory-ui-handler.js');
+      const uiData = prepareInventoryUIData(inventoryMap);
+
+      // Send to UI
+      player.ui.sendData({ type: 'update-inventory', payload: uiData });
+    } catch (error) {
+      console.error('Error opening inventory UI:', error);
+    }
   });
 
   /**
