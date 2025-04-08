@@ -52,56 +52,81 @@ export class CyberCrawlerController extends PlayerEntityController {
   }
 
   /**
-   * Performs a basic melee attack using a sphere cast.
+   * Performs a melee attack using a raycast.
+   * Checks cooldown, performs hit detection, applies damage, and provides feedback.
    * @param entity The player entity performing the attack.
+   * @returns boolean indicating if attack hit a target
    */
-  performMeleeAttack(entity: PlayerEntity): void {
-    if (!entity || !entity.player) return;
+  performMeleeAttack(entity: PlayerEntity): boolean {
+    if (!entity || !entity.player) return false;
 
     const world = entity.world;
-    if (!world || !world.simulation) { // Check for simulation object
-      console.error("Missing world or world.simulation reference in melee attack");
-      return;
+    const player = entity.player;
+    if (!world || !world.simulation) {
+      console.error("Missing world or simulation in melee attack");
+      return false;
     }
 
-    const attackRange = 1.5;
-    const attackRadius = 0.8;
-    const attackDamage = 15;
+    // Import combat constants and playerStates lazily to avoid circular deps
+    const { MELEE_ATTACK_RANGE, MELEE_ATTACK_DAMAGE, MELEE_ATTACK_COOLDOWN_MS } = require('../constants/combat-config');
+    const { playerStates } = require('./playerController');
 
-    const forwardVector = entity.directionFromRotation;
-    const currentPosition = entity.position;
-    if (!currentPosition) {
-      console.error(`Player ${entity.player?.id || 'Unknown'} has no position! Cannot perform attack.`);
-      return;
+    const state = playerStates.get(player.id);
+    if (!state) {
+      console.warn(`No player state found for ${player.id}`);
+      return false;
     }
 
-    const castCenter = new Vector3(
-      currentPosition.x + forwardVector.x * attackRange,
-      currentPosition.y + forwardVector.y * attackRange + 0.5, // Slightly offset upwards
-      currentPosition.z + forwardVector.z * attackRange
+    const now = Date.now();
+    if (now - state.lastAttackTime < MELEE_ATTACK_COOLDOWN_MS) {
+      // Still on cooldown
+      return false;
+    }
+    state.lastAttackTime = now;
+
+    const origin = entity.position;
+    const direction = player.camera?.facingDirection;
+    if (!origin || !direction) {
+      console.error("Missing player position or camera direction");
+      return false;
+    }
+
+    const raycastResult = world.simulation.raycast(
+      origin,
+      direction,
+      MELEE_ATTACK_RANGE,
+      { filterExcludeRigidBody: entity.rawRigidBody }
     );
 
-    // Perform the sphere cast using world.simulation
-    // const hits = world.simulation.spherecast(castCenter, attackRadius) ?? []; // Use nullish coalescing
-    // console.warn("Melee attack spherecast is currently disabled due to SDK limitations."); // Add warning
+    let hit = false;
 
-    console.log(`Player ${entity.player.id} performed melee attack attempt near ${JSON.stringify(castCenter)} (spherecast disabled)`);
+    if (raycastResult?.hitEntity && raycastResult.hitEntity.id !== entity.id) {
+      const target = raycastResult.hitEntity;
+      applyDamage(target, MELEE_ATTACK_DAMAGE);
 
-    // Temporarily disable hit processing as spherecast is unavailable
-    /*
-    for (const hit of hits) {
-      if (hit.entity.id === entity.id) continue; // Ignore self-hits
+      // Feedback: chat message
+      world.chatManager.sendPlayerMessage(player, `Hit entity ${target.id} for ${MELEE_ATTACK_DAMAGE} damage`, 'FF0000');
 
-      // Check if the hit entity is a valid target (not self, not another player)
-      if (hit.entity.id !== entity.id && !(hit.entity instanceof PlayerEntity)) {
-        console.log(`Melee hit potential target: ${hit.entity.id}`);
-        applyDamage(hit.entity, attackDamage);
-        // Optional: Apply impulse
-        // hit.entity.applyImpulse({ x: forwardVector.x * 50, y: 20, z: forwardVector.z * 50 });
-        break; // Hit only one target
-      }
+      // Optional: tint target briefly
+      try {
+        target.setTintColor?.({ r: 255, g: 0, b: 0 });
+        setTimeout(() => {
+          target.setTintColor?.({ r: 255, g: 255, b: 255 });
+        }, 200);
+      } catch {}
+
+      hit = true;
+    } else {
+      // Miss feedback (optional)
+      // world.chatManager.sendPlayerMessage(player, 'Missed attack', 'AAAAAA');
     }
-    */
+
+    // Play attack animation on player
+    try {
+      entity.startModelOneshotAnimations(['attack']);
+    } catch {}
+
+    return hit;
   }
 
   /**

@@ -30,6 +30,7 @@ import { CraftingManager } from './src/crafting/crafting-manager'; // Import Cra
 import { spawnMutatedPlants } from './src/world/entities/spawn-mutated-plants';
 import { spawnScrapMetal } from './src/world/entities/spawn-scrap-metal';
 import { CustomPlayerController } from './src/player/custom-player-controller';
+import { spawnEnemiesInArea } from './src/world/entities/spawn-enemies';
 
 // We'll keep the map import as a fallback
 import worldMap from './assets/map.json';
@@ -84,6 +85,18 @@ startServer(world => {
     console.log("[Root Index] Scrap metal spawned.");
   } catch (error) {
     console.error("[Root Index] ERROR during scrap metal spawn:", error);
+  }
+
+  // Spawn some test enemies
+  try {
+    console.log("[Root Index] Spawning test enemies...");
+    spawnEnemiesInArea(world, {
+      min: { x: -5, y: 3, z: -5 },
+      max: { x: 5, y: 3, z: 5 },
+    }, 3);
+    console.log("[Root Index] Test enemies spawned.");
+  } catch (error) {
+    console.error("[Root Index] ERROR during enemy spawn:", error);
   }
 
   /**

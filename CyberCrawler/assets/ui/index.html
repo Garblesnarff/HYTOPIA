@@ -307,6 +307,62 @@ setupUI();
 #crafting-ui-wrapper .crafting-progress-bar { height: 100%; width: 0%; background-color: #00ff00; transition: width 0.1s linear; }
 </style>
 
+<!-- Enemy Health Bar Template -->
+<template id="health-bar-template">
+  <div class="enemy-healthbar">
+    <div class="health-bar-fill"></div>
+    <div class="health-text"></div>
+  </div>
+</template>
+
+<style>
+.enemy-healthbar {
+  width: 100px;
+  height: 12px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+  font-family: Arial, sans-serif;
+  color: white;
+  text-align: center;
+  font-size: 10px;
+}
+.enemy-healthbar .health-bar-fill {
+  background: linear-gradient(to right, #ff0000, #ff3333);
+  height: 100%;
+  width: 100%;
+  transition: width 0.2s ease;
+}
+.enemy-healthbar .health-text {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
+  line-height: 12px;
+  pointer-events: none;
+}
+</style>
+
+<script>
+hytopia.registerSceneUITemplate('health-bar', (id, onState) => {
+  const template = document.getElementById('health-bar-template');
+  const clone = template.content.cloneNode(true);
+  const fill = clone.querySelector('.health-bar-fill');
+  const text = clone.querySelector('.health-text');
+
+  onState(state => {
+    const health = state.health ?? 100;
+    const maxHealth = state.maxHealth ?? 100;
+    const percent = Math.max(0, Math.min(100, (health / maxHealth) * 100));
+    fill.style.width = percent + '%';
+    text.textContent = `${health} / ${maxHealth}`;
+  });
+
+  return clone;
+});
+</script>
+
 <template id="player-healthbar-template">
   <div class="player-healthbar">
     <div class="health-bar-fill"></div>

@@ -21,12 +21,16 @@ const PLAYER_CONSTANTS = {
   AIR_CONTROL: 0.7,
 };
 
-// Track player state
+/**
+ * Player state tracked per connected player.
+ */
 interface PlayerState {
   health: number;
   lastDashTime: number;
   cyberEnhancements: string[];
   inventory: InventoryItem[]; // Use the specific InventoryItem type
+  lastAttackTime: number; // Timestamp of last melee attack
+  isAttacking: boolean;   // Whether player is currently attacking (for animation state)
 }
 
 // Map to store player states - Exported for use in custom controller
@@ -75,6 +79,8 @@ export function setupPlayer(world: World, player: Player): void {
     lastDashTime: 0,
     cyberEnhancements: [],
     inventory: [], // Initialize as empty array
+    lastAttackTime: 0,
+    isAttacking: false,
   };
   playerStates.set(player.id, playerState);
 

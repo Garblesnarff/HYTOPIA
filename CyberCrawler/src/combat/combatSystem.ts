@@ -118,6 +118,12 @@ function processMomentumDamage(
  * Applies damage to an entity (Still used by player controller)
  */
 export function applyDamage(entity: Entity, damage: number): void {
+  // If entity has a takeDamage method, call it
+  if (typeof (entity as any).takeDamage === 'function') {
+    (entity as any).takeDamage(damage);
+    return;
+  }
+
   if (entity instanceof PlayerEntity) {
     const playerId = entity.player?.id;
     // Use player ID for logging as 'name' and 'displayName' seem incorrect
