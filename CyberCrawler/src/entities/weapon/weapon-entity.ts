@@ -1,97 +1,175 @@
+import {
+  Audio,
+  Entity,
+  Quaternion,
+  Vector3Like,
+  World,
+  QuaternionLike,
+  RaycastHit
+} from 'hytopia';
+
+import { COMBAT_CONFIG } from '../../constants/combat-config';
+
 /**
- * WeaponEntity - A melee weapon entity attached to a player
+ * CyberBladeEntity - A melee weapon that deals damage in close range
  * 
- * Handles attack animations, raycast hit detection, and damage application.
- * Designed to be attached as a child entity to the player's hand.
- * 
- * Dependencies:
- * - HYTOPIA SDK Entity, Audio
- * - PlayerEntity
- * 
- * @author Cline
+ * This weapon uses the player's "simple_interact" animation as a melee attack
+ * motion since there are no specific melee attack animations in the player model.
  */
-
-import { Entity, PlayerEntity, Audio, Vector3Like } from 'hytopia';
-
-export class WeaponEntity extends Entity {
-  protected _damage: number;
-  protected _range: number;
-  protected _cooldown: number = 0;
-  protected _owner: PlayerEntity | null = null;
-
-  constructor(options: {
-    name: string;
-    modelUri: string;
-    damage: number;
-    range: number;
-  } & Record<string, any>) {
+export class CyberBladeEntity extends Entity {
+  private readonly _damage: number = COMBAT_CONFIG.CYBER_BLADE_DAMAGE;
+  private readonly _range: number = COMBAT_CONFIG.CYBER_BLADE_RANGE;
+  private readonly _attackRate: number = COMBAT_CONFIG.CYBER_BLADE_ATTACK_RATE;
+  private readonly _attackSound: Audio;
+  private readonly _hitSound: Audio;
+  
+  private _isAttacking: boolean = false;
+  private _lastAttackTime: number = 0;
+  
+  constructor() {
     super({
-      modelScale: 1,
-      ...options, // allow parent, parentNodeName, etc.
+      name: 'Cyber Blade',
+      modelUri: 'models/items/sword.gltf', // Using a basic sword model
+      modelScale: 0.8,
+      // Set parent and relative position in the equip method
     });
-
-    this._damage = options.damage;
-    this._range = options.range;
-  }
-
-  /**
-   * Set the player entity who owns this weapon
-   * @param owner PlayerEntity
-   */
-  public setOwner(owner: PlayerEntity): void {
-    this._owner = owner;
-  }
-
-  /**
-   * Perform a melee attack with this weapon
-   */
-  public attack(): void {
-    if (!this._owner || !this._owner.world || this._cooldown > 0) return;
-
-    // Play attack animation on weapon and player
-    this.startModelOneshotAnimations(['attack']);
-    this._owner.startModelOneshotAnimations(['attack']);
-
-    // Play attack sound
-    new Audio({
+    
+    // Setup sound effects
+    this._attackSound = new Audio({
+      attachedToEntity: this,
+      uri: 'audio/sfx/sword-swing.mp3',
+      volume: 0.5,
+      referenceDistance: 5,
+    });
+    
+    this._hitSound = new Audio({
       attachedToEntity: this,
       uri: 'audio/sfx/hit.mp3',
-      loop: false,
-      volume: 1,
-    }).play(this._owner.world);
-
-    // Perform raycast in camera direction
-    const raycastResult = this._owner.world.simulation.raycast(
-      this._owner.position,
-      this._owner.player.camera.facingDirection,
-      this._range,
-      { filterExcludeRigidBody: this._owner.rawRigidBody }
-    );
-
-    if (raycastResult?.hitEntity) {
-      const hitEntity = raycastResult.hitEntity;
-
-      if (typeof (hitEntity as any).takeDamage === 'function') {
-        (hitEntity as any).takeDamage(this._damage);
-
-        // Play hit sound
-        new Audio({
-          position: raycastResult.hitPoint,
-          uri: 'audio/sfx/hit.mp3',
-          loop: false,
-          volume: 1,
-        }).play(this._owner.world);
-
-        // Optional: spawn hit effect particles here
+      volume: 0.7,
+      referenceDistance: 5,
+    });
+  }
+  
+  /**
+   * Equip the weapon to a player entity
+   * @param parentEntity The player entity to equip the weapon to
+   */
+  public equip(parentEntity: Entity): void {
+    if (!this.isSpawned || !this.world) return;
+    
+    // Set parent and position relative to player's hand
+    this.setParent(parentEntity, 'hand_right_anchor');
+    this.setPosition({ x: 0, y: 0.1, z: 0 });
+    this.setRotation(Quaternion.fromEuler(-90, 0, 90));
+    
+    // Set player's animations to hold the weapon
+    if (parentEntity.hasOwnProperty('playerController')) {
+      const playerController = (parentEntity as any).playerController;
+      if (playerController) {
+        playerController.idleLoopedAnimations = ['idle_upper', 'idle_lower'];
       }
     }
-
-    // Set cooldown (ms)
-    this._cooldown = 500;
+  }
+  
+  /**
+   * Unequip the weapon from its parent
+   */
+  public unequip(): void {
+    this.setParent(undefined);
+    
+    // Reset player's animations
+    const previousParent = this.parent;
+    if (previousParent && previousParent.hasOwnProperty('playerController')) {
+      const playerController = (previousParent as any).playerController;
+      if (playerController) {
+        playerController.idleLoopedAnimations = ['idle_upper', 'idle_lower'];
+      }
+    }
+  }
+  
+  /**
+   * Perform a melee attack
+   * @returns boolean Whether the attack was performed
+   */
+  public attack(): boolean {
+    if (!this.parent || !this.world || this._isAttacking) return false;
+    
+    const now = performance.now();
+    if (now - this._lastAttackTime < 1000 / this._attackRate) return false;
+    
+    this._lastAttackTime = now;
+    this._isAttacking = true;
+    
+    // Play attack animation on parent entity (player)
+    this.parent.startModelOneshotAnimations(['simple_interact']);
+    
+    // Play attack sound
+    this._attackSound.play(this.world);
+    
+    // Perform raycast to detect hits
+    const hit = this._performAttackRaycast();
+    if (hit) {
+      this._processHit(hit);
+    }
+    
+    // Reset attack state after animation
     setTimeout(() => {
-      this._cooldown = 0;
-    }, 500);
+      this._isAttacking = false;
+    }, 500); // Animation duration approximation
+    
+    return true;
+  }
+  
+  /**
+   * Perform a raycast to detect hits
+   * @returns The raycast hit result or undefined if no hit
+   */
+  private _performAttackRaycast(): RaycastHit | undefined {
+    if (!this.parent || !this.world) return undefined;
+    
+    // Use parent's position and direction
+    const parent = this.parent;
+    const origin = parent.position;
+    
+    // Determine attack direction - use camera direction if parent has camera
+    let direction: Vector3Like = { x: 0, y: 0, z: 1 }; // Default forward direction
+    
+    if (parent.hasOwnProperty('player') && (parent as any).player.camera) {
+      direction = (parent as any).player.camera.facingDirection;
+    } else {
+      // Use parent's forward direction as fallback
+      const forwardVector = Quaternion.forward(parent.rotation);
+      direction = forwardVector;
+    }
+    
+    // Perform the raycast
+    return this.world.simulation.raycast(
+      origin,
+      direction,
+      this._range,
+      {
+        filterExcludeRigidBody: parent.rawRigidBody,
+      }
+    );
+  }
+  
+  /**
+   * Process a hit from the attack raycast
+   * @param hit The raycast hit result
+   */
+  private _processHit(hit: RaycastHit): void {
+    const hitEntity = hit.hitEntity;
+    if (!hitEntity) return;
+    
+    if (typeof (hitEntity as any).takeDamage === 'function') {
+      (hitEntity as any).takeDamage(this._damage);
+      
+      // Play hit sound
+      this._hitSound.play(this.world!);
+      
+      // Optional: spawn hit effect particles here
+    }
   }
 }
 
-export default WeaponEntity;
+export default CyberBladeEntity;

@@ -21,7 +21,7 @@ import {
   BaseEntityControllerEvent,
 } from 'hytopia';
 
-import { WeaponEntity } from './src/entities/weapon/weapon-entity';
+import CyberBladeEntity from './src/entities/weapon/weapon-entity';
 
 // Import our world generation code
 import { generateWorldMap } from './src/world/world-map';
@@ -122,20 +122,13 @@ startServer(world => {
     if (playerEntity) {
 
       // Create and attach a sword weapon entity
-      const sword = new WeaponEntity({
-        name: 'Iron Sword',
-        modelUri: 'models/items/sword.gltf',
-        damage: 20,
-        range: 3,
-        parent: playerEntity,
-        parentNodeName: 'hand_right_anchor',
-      });
-      sword.setOwner(playerEntity);
+      const sword = new CyberBladeEntity();
       sword.spawn(
         world,
         { x: 0, y: 0, z: 0 },
         { x: 0, y: 0, z: 0, w: 1 }
       );
+      sword.equip(playerEntity);
 
       // Hook up attack input to weapon
       const controller = playerEntity.controller;
