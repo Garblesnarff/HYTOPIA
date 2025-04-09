@@ -110,6 +110,48 @@ export class CyberBladeEntity extends Entity {
     const hit = this._performAttackRaycast();
     if (hit) {
       this._processHit(hit);
+
+      // Spawn hit particle effect
+      if (this.world) {
+        // Spawn a temporary hit effect entity at the hit point
+        const effect = new Entity({
+          name: 'HitEffect',
+          blockTextureUri: 'blocks/coal-ore.png',
+          blockHalfExtents: { x: 0.3, y: 0.3, z: 0.3 },
+        });
+
+        // Offset effect slightly forward from hit point
+        const offset = 0.2;
+        const dir = (() => {
+          if (this.parent && (this.parent as any).player?.camera?.facingDirection) {
+            return (this.parent as any).player.camera.facingDirection;
+          }
+          return { x: 0, y: 0, z: 1 };
+        })();
+
+        const spawnPos = {
+          x: hit.hitPoint.x + dir.x * offset,
+          y: hit.hitPoint.y + dir.y * offset + 1.5, // raise 1.5 blocks higher
+          z: hit.hitPoint.z + dir.z * offset,
+        };
+
+        for (let i = 0; i < 2; i++) {
+          const effect = new Entity({
+            name: 'HitEffect',
+            blockTextureUri: 'blocks/coal-ore.png',
+            blockHalfExtents: { x: 0.3, y: 0.3, z: 0.3 },
+          });
+
+          effect.spawn(this.world, spawnPos);
+
+          // Spin effect for visibility
+          effect.setAngularVelocity?.({ x: 0, y: 5, z: 0 });
+
+          setTimeout(() => {
+            effect.despawn();
+          }, 600); // Despawn after 0.6 seconds
+        }
+      }
     }
     
     // Reset attack state after animation
@@ -138,12 +180,12 @@ export class CyberBladeEntity extends Entity {
       direction = (parent as any).player.camera.facingDirection;
     } else {
       // Use parent's forward direction as fallback
-      const forwardVector = Quaternion.forward(parent.rotation);
+      const forwardVector = (Quaternion as any).forward(parent.rotation);
       direction = forwardVector;
     }
     
     // Perform the raycast
-    return this.world.simulation.raycast(
+    const result = this.world.simulation.raycast(
       origin,
       direction,
       this._range,
@@ -151,6 +193,7 @@ export class CyberBladeEntity extends Entity {
         filterExcludeRigidBody: parent.rawRigidBody,
       }
     );
+    return result === null ? undefined : result;
   }
   
   /**
