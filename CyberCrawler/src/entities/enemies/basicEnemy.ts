@@ -112,7 +112,9 @@ export class BasicEnemyEntity extends Entity {
 
     // Despawn after short delay
     setTimeout(() => {
-      this.despawn();
+      if (this.isSpawned) {
+        this.despawn();
+      }
     }, 1000);
   }
 

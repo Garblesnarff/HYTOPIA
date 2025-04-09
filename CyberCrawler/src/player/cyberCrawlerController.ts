@@ -98,6 +98,8 @@ export class CyberCrawlerController extends PlayerEntityController {
       { filterExcludeRigidBody: entity.rawRigidBody }
     );
 
+    console.log('Melee raycast result:', raycastResult);
+
     let hit = false;
 
     if (raycastResult?.hitEntity && raycastResult.hitEntity.id !== entity.id) {

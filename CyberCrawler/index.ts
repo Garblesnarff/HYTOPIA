@@ -21,6 +21,8 @@ import {
   BaseEntityControllerEvent,
 } from 'hytopia';
 
+import { WeaponEntity } from './src/entities/weapon/weapon-entity';
+
 // Import our world generation code
 import { generateWorldMap } from './src/world/world-map';
 import { PLAYER_CONFIG } from './src/constants/world-config';
@@ -48,6 +50,9 @@ const inventoryOpenPlayers = new Set<string>();
  */
 startServer(world => {
   console.log('Starting CyberCrawler server...');
+
+  // Enable debug visualization of raycasts
+  world.simulation.enableDebugRaycasting(true);
   
   // Use our programmatic world generation instead of loading from JSON
   try {
@@ -116,6 +121,33 @@ startServer(world => {
 
     if (playerEntity) {
 
+      // Create and attach a sword weapon entity
+      const sword = new WeaponEntity({
+        name: 'Iron Sword',
+        modelUri: 'models/items/sword.gltf',
+        damage: 20,
+        range: 3,
+        parent: playerEntity,
+        parentNodeName: 'hand_right_anchor',
+      });
+      sword.setOwner(playerEntity);
+      sword.spawn(
+        world,
+        { x: 0, y: 0, z: 0 },
+        { x: 0, y: 0, z: 0, w: 1 }
+      );
+
+      // Hook up attack input to weapon
+      const controller = playerEntity.controller;
+      if (controller) {
+        controller.on(BaseEntityControllerEvent.TICK_WITH_PLAYER_INPUT, ({ input }) => {
+          if (input.ml) {
+            sword.attack();
+            input.ml = false;
+          }
+        });
+      }
+
       const playerHealthBar = new SceneUI({
         templateId: 'player-healthbar',
         attachedToEntity: playerEntity,
@@ -129,7 +161,6 @@ startServer(world => {
       playerHealthBars.set(player.id, playerHealthBar);
 
       // Add inventory toggle on "V" key press without replacing controller
-      const controller = playerEntity.controller;
       if (controller) {
         controller.on(BaseEntityControllerEvent.TICK_WITH_PLAYER_INPUT, async ({ input }) => {
           if (input.v) {
