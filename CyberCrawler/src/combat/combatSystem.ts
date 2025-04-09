@@ -131,6 +131,23 @@ export function applyDamage(entity: Entity, damage: number): void {
     if (playerId) {
       const newHealth = updatePlayerHealth(playerId, -damage);
       console.log(`Player ${playerIdentifier} health: ${newHealth}`);
+
+      // Flash red on player entity
+      try {
+        entity.setTintColor?.({ r: 255, g: 0, b: 0 });
+        setTimeout(() => {
+          entity.setTintColor?.({ r: 255, g: 255, b: 255 });
+        }, 200);
+      } catch {}
+
+      // Update player HUD health bar if exists
+      try {
+        const playerHealthBar = (entity as any).healthBar;
+        if (playerHealthBar) {
+          playerHealthBar.setState({ health: newHealth });
+        }
+      } catch {}
+
       // TODO: Implement player death handling
     }
   } else {

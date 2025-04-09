@@ -160,6 +160,9 @@ startServer(world => {
       playerHealthBar.load(world);
       playerHealthBars.set(player.id, playerHealthBar);
 
+      // Attach health bar reference to player entity for easy access
+      (playerEntity as any).healthBar = playerHealthBar;
+
       // Add inventory toggle on "V" key press without replacing controller
       if (controller) {
         controller.on(BaseEntityControllerEvent.TICK_WITH_PLAYER_INPUT, async ({ input }) => {
