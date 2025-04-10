@@ -110,6 +110,25 @@ function initializeRecipeDatabase(): void {
         iconReference: 'icons/items/neural_focus.png',
       },
     },
+    {
+      id: 'craft_mutated_healing_potion',
+      name: 'Craft Mutated Healing Potion',
+      description: 'Brew a crude healing potion from mutated plants.',
+      category: RecipeCategory.Consumables,
+      difficulty: Difficulty.Easy,
+      craftingTime: 3,
+      materials: [
+        createMaterialFromResource('mutated_plants', 3),
+      ],
+      result: {
+        id: 'mutated_healing_potion',
+        name: 'Mutated Healing Potion',
+        quantity: 1,
+        healingAmount: 15,
+        effectDescription: 'Restores 15 health.',
+        iconReference: 'icons/items/mutated_potion.png',
+      },
+    },
     // Weapons & Ammo
     {
       id: 'craft_vibro_blade',
@@ -128,6 +147,26 @@ function initializeRecipeDatabase(): void {
         quantity: 1,
         damage: 15,
         effectDescription: 'A melee weapon with vibrating edge.',
+        iconReference: 'icons/items/makeshift_blade.png',
+      },
+    },
+    {
+      id: 'craft_makeshift_blade',
+      name: 'Craft Makeshift Blade',
+      description: 'Assemble a crude blade from scrap metal and plant fibers.',
+      category: RecipeCategory.Weapons,
+      difficulty: Difficulty.Easy,
+      craftingTime: 5,
+      materials: [
+        createMaterialFromResource('scrap_metal', 2),
+        createMaterialFromResource('mutated_plants', 1),
+      ],
+      result: {
+        id: 'makeshift_blade',
+        name: 'Makeshift Blade',
+        quantity: 1,
+        damage: 8,
+        effectDescription: 'A crude melee weapon.',
         iconReference: 'icons/items/makeshift_blade.png',
       },
     },

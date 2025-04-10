@@ -3,12 +3,13 @@
  * Handles player movement, physics interactions, and abilities
  */
 
-import { World, Player, PlayerEntity, EntityEvent, Vector3, PlayerInput, PlayerEvent, ColliderShape, WorldLoopEvent, PlayerCameraMode } from 'hytopia'; // Added PlayerCameraMode
+import { World, Player, PlayerEntity, EntityEvent, Vector3, PlayerInput, PlayerEvent, ColliderShape, WorldLoopEvent, PlayerCameraMode, PlayerUIEvent } from 'hytopia'; // Added PlayerCameraMode and PlayerUIEvent
 import { applyImpulse } from '../physics/physicsSystem';
 import { CyberCrawlerController } from './cyberCrawlerController';
 import { PLAYER_CONFIG } from '../constants/world-config'; // Import player config for spawn point
 import { findGroundHeight } from '../utils/terrain-utils'; // Import ground finding utility
 import { InventoryItem } from './inventory-manager'; // Import InventoryItem
+import { CraftingManager } from '../crafting/crafting-manager'; // Import CraftingManager
 
 // Player movement constants
 const PLAYER_CONSTANTS = {
@@ -95,6 +96,19 @@ export function setupPlayer(world: World, player: Player): void {
   console.log("=== setupPlayer() CALLED, loading UI ===");
   player.ui.load('ui/index.html');
   console.log(`[setupPlayer] Called player.ui.load('ui/index.html') for player ${player.id}`);
+
+  // Register UI event listener for crafting and other UI events
+  player.ui.on(PlayerUIEvent.DATA, (event) => {
+    try {
+      console.log(`[PlayerController] Received UI event from player ${player.id}:`, event.data);
+      if (event.data) {
+        const payload = event.data.payload || event.data; // Support nested payload
+        CraftingManager.instance.handlePlayerUIEvent(player, payload);
+      }
+    } catch (err) {
+      console.error(`[PlayerController] Error handling UI event from player ${player.id}:`, err);
+    }
+  });
 
   // --- Start: Explicit Camera Setup for Diagnostics ---
   console.log("Setting camera to THIRD_PERSON for diagnostics...");
