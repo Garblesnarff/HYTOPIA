@@ -29,6 +29,7 @@ enum EnemyState {
 export class EnemyController extends BaseEntityController {
   private state: EnemyState = EnemyState.IDLE;
   private targetPlayer: PlayerEntity | null = null;
+  private attackCooldown = 0;
 
   /**
    * Called every tick for AI updates.
@@ -90,7 +91,21 @@ export class EnemyController extends BaseEntityController {
       entity.stopModelAnimations(['walk', 'run']);
       entity.startModelLoopedAnimations(['idle']);
     } catch {}
-    // TODO: Add wandering or idle animations
+
+    // Wander randomly
+    if (Math.random() < 0.01) { // 1% chance per tick to pick a new wander target
+      const wanderDistance = 5;
+      const target = {
+        x: entity.position.x + (Math.random() - 0.5) * wanderDistance,
+        y: entity.position.y,
+        z: entity.position.z + (Math.random() - 0.5) * wanderDistance,
+      };
+      const controller = entity.controller as any;
+      if (controller?.move && controller?.face) {
+        controller.move(target, entity.speed * 0.5);
+        controller.face(target, entity.speed);
+      }
+    }
   }
 
   /**

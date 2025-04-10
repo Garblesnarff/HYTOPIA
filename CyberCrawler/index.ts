@@ -51,8 +51,8 @@ const inventoryOpenPlayers = new Set<string>();
 startServer(world => {
   console.log('Starting CyberCrawler server...');
 
-  // Enable debug visualization of raycasts
-  world.simulation.enableDebugRaycasting(true);
+  // Enable debug visualization of colliders (wireframes)
+  // world.simulation.enableDebugRendering(true);
   
   // Use our programmatic world generation instead of loading from JSON
   try {
@@ -96,8 +96,8 @@ startServer(world => {
   try {
     console.log("[Root Index] Spawning test enemies...");
     spawnEnemiesInArea(world, {
-      min: { x: -5, y: 3, z: -5 },
-      max: { x: 5, y: 3, z: 5 },
+      min: { x: 20, y: 0, z: 20 },
+      max: { x: 100, y: 0, z: 100 },
     }, 3);
     console.log("[Root Index] Test enemies spawned.");
   } catch (error) {

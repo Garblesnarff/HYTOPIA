@@ -36,11 +36,13 @@ export class BasicEnemyEntity extends Entity {
       modelLoopedAnimations: ['idle'],
       name: 'BasicEnemy',
       rigidBodyOptions: {
+        enabledRotations: { x: false, y: true, z: false },
+        angularDamping: 1,
         colliders: [
           {
-            shape: ColliderShape.CAPSULE,
+            shape: ColliderShape.BALL,
             radius: 0.5,
-            halfHeight: 1,
+            
             collisionGroups: {
               belongsTo: [4], // CollisionGroup.ENTITY
               collidesWith: [8, 1, 4, 2], // PLAYER, BLOCK, ENTITY, ENTITY_SENSOR
@@ -65,6 +67,7 @@ export class BasicEnemyEntity extends Entity {
     });
   }
 
+            
   /**
    * Apply damage to this enemy.
    * @param amount Amount of damage to apply
