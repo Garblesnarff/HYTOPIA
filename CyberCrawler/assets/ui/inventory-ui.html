@@ -1,134 +1,349 @@
-<!-- Inventory UI Fragment - Hytopia compliant -->
+<!-- Inventory UI - Fix for array payloads (raw inventory array) -->
+<!-- Author: Cline -->
+
 <style>
-.inventory-container {
-  display: flex;
-  flex-wrap: wrap;
-  padding: 20px;
-  background-color: rgba(10, 10, 20, 0.85);
-  border: 2px solid #00ff00;
-  box-shadow: 0 0 15px #00ff00 inset;
+/* ... (unchanged styles from previous version) ... */
+.inventory-panel {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 420px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #a35b1e;
+  border-radius: 10px;
   font-family: 'Courier New', Courier, monospace;
-  color: #00ff00;
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  margin: 0;
-  overflow-y: auto;
+  color: #222;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-
-.inventory-header {
-  width: 100%;
+.header {
+  display: flex;
+  align-items: flex-end;
+  background: transparent;
+  border-bottom: 2px solid #a35b1e;
+  position: relative;
+  height: 38px;
+}
+.close-button {
+  background: #c00;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  width: 32px;
+  height: 32px;
+  margin: 6px 8px 0 8px;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 32px;
   text-align: center;
-  font-size: 1.5em;
-  margin-bottom: 10px;
-  border-bottom: 1px dashed #00ff00;
-  padding-bottom: 5px;
+  border-radius: 6px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
 }
-
+.close-button:hover { background: #ff4444; }
+.tabs {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  gap: 0;
+  margin-left: 48px;
+}
+.tab-button {
+  flex: 1;
+  padding: 8px 0 6px 0;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 8px 8px 0 0;
+  background: #fff;
+  color: #222;
+  font-size: 16px;
+  min-width: 110px;
+  margin-right: 2px;
+  margin-left: 2px;
+  transition: background 0.15s, color 0.15s;
+  border: 2px solid #a35b1e;
+  border-bottom: none;
+}
+.tab-button.active {
+  background: #fff;
+  color: #222;
+  z-index: 1;
+}
+.tab-button.profile {
+  background: #a35b1e;
+  color: #fff;
+  border: 2px solid #a35b1e;
+  border-bottom: none;
+}
+.tab-button.profile.active {
+  background: #fff;
+  color: #a35b1e;
+}
+.tab-content {
+  padding: 12px 18px 10px 18px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+.tab-content.active { display: flex; }
+.main-section {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  margin-bottom: 10px;
+  min-height: 140px;
+}
+.equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 48px);
+  grid-template-rows: repeat(3, 48px);
+  gap: 8px;
+}
+.equipment-grid .slot {
+  width: 48px;
+  height: 48px;
+  background: transparent;
+  border: 2px solid #a35b1e;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.equipment-grid .slot img {
+  max-width: 38px;
+  max-height: 38px;
+}
+.avatar-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  min-height: 120px;
+}
+.avatar-box {
+  width: 96px;
+  height: 96px;
+  background: #fff;
+  border: 2px solid #a35b1e;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar-box img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  opacity: 0.7;
+}
 .inventory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 64px);
-  grid-gap: 8px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
   justify-content: center;
-  width: 100%;
 }
-
-.slot {
-  width: 64px;
-  height: 64px;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid #008080;
+.inventory-grid .slot,
+.hotbar .slot {
+  width: 48px;
+  height: 48px;
+  background: transparent;
+  border: 2px solid #a35b1e;
+  border-radius: 8px;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
 .slot img {
-  max-width: 48px;
-  max-height: 48px;
+  max-width: 36px;
+  max-height: 36px;
 }
-
 .quantity {
   position: absolute;
   bottom: 2px;
-  right: 4px;
-  font-size: 12px;
+  right: 6px;
+  font-size: 13px;
   background: rgba(0,0,0,0.5);
-  padding: 1px 3px;
-  border-radius: 3px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: bold;
 }
-
-.tooltip {
-  display: none;
-  position: absolute;
-  bottom: 70px;
-  left: 0;
-  background: #222;
-  padding: 5px;
-  border: 1px solid #555;
+.hotbar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+.hotbar .slot {
+  width: 40px;
+  height: 40px;
+}
+.profile-tab {
+  color: #ccc;
+  text-align: center;
+}
+.debug-inventory-list {
   font-size: 12px;
-  z-index: 10;
-}
-
-.slot:hover .tooltip {
-  display: block;
-}
-
-.close-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #550000;
-  color: #ff0000;
-  border: 1px solid #ff0000;
-  padding: 5px 10px;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-.close-button:hover {
-  background: #ff0000;
-  color: #000000;
+  color: #a35b1e;
+  background: rgba(255,255,255,0.07);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-top: 6px;
+  max-height: 80px;
+  overflow-y: auto;
+  font-family: monospace;
+  white-space: pre;
 }
 </style>
 
-<button class="close-button" id="close-inventory-ui">X</button>
+<div class="inventory-panel">
+  <div class="header">
+    <button class="close-button">X</button>
+    <div class="tabs">
+      <button class="tab-button active" data-tab="inventory">INVENTORY</button>
+      <button class="tab-button profile" data-tab="profile">PROFILE</button>
+    </div>
+  </div>
 
-<div class="inventory-container">
-  <div class="inventory-header">Inventory</div>
-  <div class="inventory-grid" id="inventory-grid"></div>
+  <div class="tab-content inventory-tab active">
+    <div class="main-section">
+      <div class="equipment-grid">
+        <div class="slot slot-helmet"></div>
+        <div class="slot slot-offhand"></div>
+        <div class="slot slot-chest"></div>
+        <div class="slot slot-shield"></div>
+        <div class="slot slot-pants"></div>
+        <div class="slot slot-boots"></div>
+      </div>
+      <div class="avatar-area">
+        <div class="avatar-box">
+          <img src="{{CDN_ASSETS_URL}}/icons/target.png" alt="Player">
+        </div>
+      </div>
+    </div>
+    <div class="inventory-grid" id="inventory-grid"></div>
+    <div class="hotbar" id="hotbar"></div>
+    <div class="debug-inventory-list" id="debug-inventory-list"></div>
+  </div>
+
+  <div class="tab-content profile-tab">
+    <p>Profile info coming soon...</p>
+  </div>
 </div>
 
 <script>
-hytopia.onData(({ type, payload }) => {
-  if (type === 'update-inventory') {
+document.querySelectorAll('.tab-button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-content').forEach(panel => {
+      panel.classList.remove('active');
+    });
+    document.querySelector('.' + tab + '-tab').classList.add('active');
+  };
+});
+document.querySelector('.close-button').onclick = () => {
+  hytopia.sendData({ type: 'close-inventory-request' });
+};
+
+// Catch-all debug: log all incoming events and payloads
+let lastEvent = '';
+let lastPayload = '';
+hytopia.onData((data) => {
+  // Show all events and payloads in debug panel
+  lastEvent = data.type;
+  lastPayload = JSON.stringify(data.payload, null, 2);
+  const debug = document.getElementById('debug-inventory-list');
+  debug.innerHTML =
+    `<b>Event:</b> ${lastEvent}\n<b>Payload:</b>\n${lastPayload || '[none]'}`;
+
+  // Only update UI for update-inventory
+  if (data.type === 'update-inventory') {
+    let inventoryArr = [];
+    let hotbarArr = [];
+    let equipmentObj = {};
+    // Accept both array and object payloads
+    if (Array.isArray(data.payload)) {
+      inventoryArr = data.payload;
+    } else if (data.payload && typeof data.payload === 'object') {
+      inventoryArr = data.payload.inventory || [];
+      hotbarArr = data.payload.hotbar || [];
+      equipmentObj = data.payload.equipment || {};
+    }
+    // Inventory grid
     const grid = document.getElementById('inventory-grid');
     grid.innerHTML = '';
-    payload.forEach(item => {
-      const slot = document.createElement('div');
-      slot.className = 'slot';
-
+    (inventoryArr || []).forEach(item => {
+      const slot = createSlot(item);
+      grid.appendChild(slot);
+    });
+    // Hotbar
+    const hotbar = document.getElementById('hotbar');
+    hotbar.innerHTML = '';
+    (hotbarArr || []).forEach(item => {
+      const slot = createSlot(item);
+      hotbar.appendChild(slot);
+    });
+    // Equipment slots
+    setEquip('.slot-helmet', equipmentObj.helmet);
+    setEquip('.slot-chest', equipmentObj.chest);
+    setEquip('.slot-pants', equipmentObj.pants);
+    setEquip('.slot-boots', equipmentObj.boots);
+    setEquip('.slot-offhand', equipmentObj.offhand);
+    setEquip('.slot-shield', equipmentObj.shield);
+  }
+});
+function createSlot(item) {
+  const slot = document.createElement('div');
+  slot.className = 'slot';
+  if (item) {
+    if (item.iconReference) {
       const img = document.createElement('img');
-      img.src = item.iconReference || '';
-      img.alt = item.name;
+      img.src = item.iconReference;
+      img.alt = item.name || '';
       slot.appendChild(img);
-
+    } else {
+      const fallback = document.createElement('span');
+      fallback.textContent = (item.name && item.name[0]) ? item.name[0].toUpperCase() : '?';
+      fallback.style.fontSize = '22px';
+      fallback.style.color = '#a35b1e';
+      slot.appendChild(fallback);
+    }
+    if (item.quantity > 1) {
       const qty = document.createElement('div');
       qty.className = 'quantity';
       qty.textContent = item.quantity;
       slot.appendChild(qty);
-
-      const tooltip = document.createElement('div');
-      tooltip.className = 'tooltip';
-      tooltip.textContent = item.name;
-      slot.appendChild(tooltip);
-
-      grid.appendChild(slot);
-    });
+    }
   }
-});
-
-document.getElementById('close-inventory-ui').onclick = () => {
-  hytopia.sendData({ type: 'close-inventory-request' });
-};
+  return slot;
+}
+function setEquip(selector, item) {
+  const slot = document.querySelector(selector);
+  slot.innerHTML = '';
+  if (item) {
+    if (item.iconReference) {
+      const img = document.createElement('img');
+      img.src = item.iconReference;
+      img.alt = item.name || '';
+      slot.appendChild(img);
+    } else if (item.name) {
+      const fallback = document.createElement('span');
+      fallback.textContent = item.name[0].toUpperCase();
+      fallback.style.fontSize = '22px';
+      fallback.style.color = '#a35b1e';
+      slot.appendChild(fallback);
+    }
+  }
+}
 </script>
