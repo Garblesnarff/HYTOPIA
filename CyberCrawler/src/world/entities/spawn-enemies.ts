@@ -10,7 +10,7 @@
  * @author Cline
  */
 
-import { World } from 'hytopia';
+import { World, SimpleEntityController, EntityEvent } from 'hytopia'; // Import EntityEvent
 import BasicEnemyEntity from '../../entities/enemies/basicEnemy';
 import { EnemyController } from '../../entities/enemies/enemyController';
 
@@ -21,8 +21,21 @@ import { EnemyController } from '../../entities/enemies/enemyController';
  */
 export function spawnEnemyAt(world: World, position: { x: number; y: number; z: number }): void {
   const enemy = new BasicEnemyEntity();
-  enemy.setController(new EnemyController());
+  // Attach a SimpleEntityController for movement
+  const movementController = new SimpleEntityController();
+  enemy.setController(movementController);
+  // Attach the custom EnemyController for AI
+  const aiController = new EnemyController();
+  (enemy as any).aiController = aiController; // Store reference for the tick handler
+
   enemy.spawn(world, position);
+
+  // Attach the AI tick logic to the enemy's tick event
+  enemy.on(EntityEvent.TICK, ({ tickDeltaMs }) => { // Use tickDeltaMs from the payload
+    if (aiController?.tick) {
+      aiController.tick(enemy, tickDeltaMs); // Pass tickDeltaMs to the AI controller
+    }
+  });
   // Removed post-spawn adjustment - let gravity handle placement
 }
 

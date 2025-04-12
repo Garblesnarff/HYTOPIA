@@ -14,25 +14,24 @@
 
 import { BaseEntityController, Entity, EntityEvent, PlayerEntity } from 'hytopia';
 import {
-  BASIC_ENEMY_DETECTION_RANGE,
   BASIC_ENEMY_ATTACK_RANGE,
   BASIC_ENEMY_ATTACK_COOLDOWN_MS,
 } from '../../constants/enemy-config';
 import BasicEnemyEntity from './basicEnemy';
+// House targeting utility
+import { getPlayerHouseDoorPosition } from '../../utils/house-utils';
 
 enum EnemyState {
-  IDLE = 'IDLE',
   CHASE = 'CHASE',
   ATTACK = 'ATTACK',
 }
 
 export class EnemyController extends BaseEntityController {
-  private state: EnemyState = EnemyState.IDLE;
-  private targetPlayer: PlayerEntity | null = null;
-  private attackCooldown = 0;
-
+  private state: EnemyState = EnemyState.CHASE;
   /**
-   * Called every tick for AI updates.
+   * Enemy AI always targets the player house door position.
+   * Enemies will move toward the house at all times, and "attack" when close enough.
+   * 
    * @param entity The enemy entity
    * @param deltaTimeMs Time since last tick
    */
@@ -40,84 +39,40 @@ export class EnemyController extends BaseEntityController {
     if (!(entity instanceof BasicEnemyEntity) || !entity.world) return;
 
     const world = entity.world;
+    const housePos = getPlayerHouseDoorPosition(world);
 
-    // Find nearest player within detection range
-    const players = world.entityManager.getAllPlayerEntities();
-    let nearestPlayer: PlayerEntity | null = null;
-    let nearestDist = Infinity;
+    // Calculate distance to house door
+    const dx = housePos.x - entity.position.x;
+    const dz = housePos.z - entity.position.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
 
-    for (const player of players) {
-      const dx = player.position.x - entity.position.x;
-      const dy = player.position.y - entity.position.y;
-      const dz = player.position.z - entity.position.z;
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        nearestPlayer = player;
-      }
-    }
-
-    if (!nearestPlayer || nearestDist > BASIC_ENEMY_DETECTION_RANGE) {
-      this.state = EnemyState.IDLE;
-      this.targetPlayer = null;
-    } else if (nearestDist > BASIC_ENEMY_ATTACK_RANGE) {
+    if (dist > BASIC_ENEMY_ATTACK_RANGE) {
       this.state = EnemyState.CHASE;
-      this.targetPlayer = nearestPlayer;
     } else {
       this.state = EnemyState.ATTACK;
-      this.targetPlayer = nearestPlayer;
     }
 
     switch (this.state) {
-      case EnemyState.IDLE:
-        this.idle(entity);
-        break;
       case EnemyState.CHASE:
-        this.chase(entity, this.targetPlayer!);
+        this.chaseHouse(entity, housePos);
         break;
       case EnemyState.ATTACK:
-        this.attack(entity, this.targetPlayer!);
+        this.attackHouse(entity, housePos);
         break;
     }
   }
 
   /**
-   * Idle behavior.
+   * Move toward the player house door.
+   * @param entity The enemy entity
+   * @param housePos The house door position
    */
-  private idle(entity: BasicEnemyEntity): void {
-    // Stop movement animations
-    try {
-      entity.stopModelAnimations(['walk', 'run']);
-      entity.startModelLoopedAnimations(['idle']);
-    } catch {}
-
-    // Wander randomly
-    if (Math.random() < 0.01) { // 1% chance per tick to pick a new wander target
-      const wanderDistance = 5;
-      const target = {
-        x: entity.position.x + (Math.random() - 0.5) * wanderDistance,
-        y: entity.position.y,
-        z: entity.position.z + (Math.random() - 0.5) * wanderDistance,
-      };
-      const controller = entity.controller as any;
-      if (controller?.move && controller?.face) {
-        controller.move(target, entity.speed * 0.5);
-        controller.face(target, entity.speed);
-      }
-    }
-  }
-
-  /**
-   * Chase the target player.
-   */
-  private chase(entity: BasicEnemyEntity, player: PlayerEntity): void {
+  private chaseHouse(entity: BasicEnemyEntity, housePos: { x: number; y: number; z: number }): void {
     const controller = entity.controller as any;
     if (controller?.move && controller?.face) {
-      controller.move(player.position, entity.speed);
-      controller.face(player.position, entity.speed * 2);
+      controller.move(housePos, entity.speed);
+      controller.face(housePos, entity.speed * 2);
     }
-
     try {
       entity.stopModelAnimations(['idle']);
       entity.startModelLoopedAnimations(['walk']);
@@ -125,18 +80,19 @@ export class EnemyController extends BaseEntityController {
   }
 
   /**
-   * Attack the target player if cooldown expired.
+   * "Attack" the house when close enough.
+   * This could be expanded to damage the house or trigger an event.
+   * @param entity The enemy entity
+   * @param housePos The house door position
    */
-  private attack(entity: BasicEnemyEntity, player: PlayerEntity): void {
+  private attackHouse(entity: BasicEnemyEntity, housePos: { x: number; y: number; z: number }): void {
     const now = Date.now();
     if (now - entity.lastAttackTime < BASIC_ENEMY_ATTACK_COOLDOWN_MS) {
       return;
     }
     entity.lastAttackTime = now;
 
-    // Deal damage to player
-    const { applyDamage } = require('../../combat/combatSystem');
-    applyDamage(player, entity.damage);
+    // TODO: Implement house damage logic here if desired
 
     // Play attack animation
     try {

@@ -19,6 +19,7 @@ import {
   PlayerUIEvent, // Added PlayerUIEvent
   SceneUI, // Import SceneUI for health bar
   BaseEntityControllerEvent,
+  WorldEvent, // Import WorldEvent for tick
 } from 'hytopia';
 
 import CyberBladeEntity from './src/entities/weapon/weapon-entity';
@@ -50,6 +51,9 @@ const inventoryOpenPlayers = new Set<string>();
  */
 startServer(world => {
   console.log('Starting CyberCrawler server...');
+
+  // Global debug flag for collider/physics wireframe rendering
+  let debugEnabled = false;
 
   // Enable debug visualization of colliders (wireframes)
   // world.simulation.enableDebugRendering(true);
@@ -100,6 +104,9 @@ startServer(world => {
       max: { x: 100, y: 0, z: 100 },
     }, 3);
     console.log("[Root Index] Test enemies spawned.");
+
+    // AI logic is now handled by the EnemyController attached to each enemy's TICK event
+    // Removed world tick listener for AI
   } catch (error) {
     console.error("[Root Index] ERROR during enemy spawn:", error);
   }
@@ -159,6 +166,7 @@ startServer(world => {
       // Add inventory toggle on "V" key press without replacing controller
       if (controller) {
         controller.on(BaseEntityControllerEvent.TICK_WITH_PLAYER_INPUT, async ({ input }) => {
+          // Inventory UI toggle
           if (input.v) {
             input.v = false; // consume key press
             if (inventoryOpenPlayers.has(player.id)) {
@@ -198,6 +206,14 @@ startServer(world => {
                 console.error('Error sending inventory data:', error);
               }
             }
+          }
+
+          // Debug wireframe toggle on "C" key press
+          if (input.c) {
+            debugEnabled = !debugEnabled;
+            world.simulation.enableDebugRendering(debugEnabled);
+            world.chatManager.sendPlayerMessage(player, debugEnabled ? 'Debug rendering ON' : 'Debug rendering OFF', '00FFFF');
+            input.c = false; // Prevent rapid toggling
           }
         });
       }
