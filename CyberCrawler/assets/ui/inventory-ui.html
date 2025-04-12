@@ -1,4 +1,4 @@
-<!-- Inventory UI - Fix for array payloads (raw inventory array) -->
+<!-- Inventory UI - Always use custom PNG for scrap_metal regardless of iconReference -->
 <!-- Author: Cline -->
 
 <style>
@@ -241,6 +241,24 @@
 </div>
 
 <script>
+const CDN = "{{CDN_ASSETS_URL}}";
+// Always use custom PNG for mutated_plants and scrap_metal
+const ITEM_ICON_MAP = {
+  mutated_plants: "icons/mutated_plant.png",
+  scrap_metal: "icons/scrap_metal.png"
+};
+function resolveIconPath(iconReference, itemId) {
+  // Always use fallback for these items
+  if (itemId && ITEM_ICON_MAP[itemId]) {
+    return CDN + "/" + ITEM_ICON_MAP[itemId];
+  }
+  if (!iconReference) return CDN + "/icons/target.png";
+  if (iconReference.endsWith(".gltf")) return CDN + "/icons/target.png";
+  if (iconReference.startsWith("http") || iconReference.startsWith("/")) return iconReference;
+  // Remove leading "assets/" if present
+  if (iconReference.startsWith("assets/")) iconReference = iconReference.slice(7);
+  return CDN + "/" + iconReference;
+}
 document.querySelectorAll('.tab-button').forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
@@ -307,18 +325,15 @@ function createSlot(item) {
   const slot = document.createElement('div');
   slot.className = 'slot';
   if (item) {
-    if (item.iconReference) {
-      const img = document.createElement('img');
-      img.src = item.iconReference;
-      img.alt = item.name || '';
-      slot.appendChild(img);
-    } else {
-      const fallback = document.createElement('span');
-      fallback.textContent = (item.name && item.name[0]) ? item.name[0].toUpperCase() : '?';
-      fallback.style.fontSize = '22px';
-      fallback.style.color = '#a35b1e';
-      slot.appendChild(fallback);
-    }
+    const iconPath = resolveIconPath(item.iconReference, item.id);
+    const img = document.createElement('img');
+    img.src = iconPath;
+    img.alt = item.name || '';
+    img.onerror = function() {
+      this.onerror = null;
+      this.src = CDN + "/icons/target.png";
+    };
+    slot.appendChild(img);
     if (item.quantity > 1) {
       const qty = document.createElement('div');
       qty.className = 'quantity';
@@ -332,18 +347,15 @@ function setEquip(selector, item) {
   const slot = document.querySelector(selector);
   slot.innerHTML = '';
   if (item) {
-    if (item.iconReference) {
-      const img = document.createElement('img');
-      img.src = item.iconReference;
-      img.alt = item.name || '';
-      slot.appendChild(img);
-    } else if (item.name) {
-      const fallback = document.createElement('span');
-      fallback.textContent = item.name[0].toUpperCase();
-      fallback.style.fontSize = '22px';
-      fallback.style.color = '#a35b1e';
-      slot.appendChild(fallback);
-    }
+    const iconPath = resolveIconPath(item.iconReference, item.id);
+    const img = document.createElement('img');
+    img.src = iconPath;
+    img.alt = item.name || '';
+    img.onerror = function() {
+      this.onerror = null;
+      this.src = CDN + "/icons/target.png";
+    };
+    slot.appendChild(img);
   }
 }
 </script>
