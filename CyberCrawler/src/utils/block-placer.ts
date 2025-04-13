@@ -9,6 +9,8 @@
 
 import { Vector3, Vector3Like, World } from 'hytopia';
 import { BLOCK_TYPES } from '../constants/block-types'; // Corrected import path
+// Import Block Health Manager
+import { BlockHealthManager } from '../world/block-health-manager';
 
 // ====================================
 // Simple block placement
@@ -29,6 +31,10 @@ export function placeBlock(
 ): boolean {
   try {
     world.chunkLattice?.setBlock(position, blockTypeId);
+    // Register the placed block with the health manager if it's not AIR
+    if (blockTypeId !== BLOCK_TYPES.AIR) {
+      BlockHealthManager.instance.registerBlock(position, blockTypeId);
+    }
     return true;
   } catch (error) {
     console.error(`Failed to place block at ${JSON.stringify(position)}:`, error);

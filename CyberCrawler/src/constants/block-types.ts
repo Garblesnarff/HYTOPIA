@@ -46,18 +46,40 @@ export const BLOCK_TYPES = {
 };
 
 /**
- * Metadata about block types, can be expanded with additional properties as needed
+ * Metadata about block types, can be expanded with additional properties like health.
  */
-export const BLOCK_PROPERTIES = {
+export const BLOCK_PROPERTIES: { [key: number]: { health?: number; isLiquid?: boolean; indestructible?: boolean; resource?: boolean; resourceAmount?: number } } = {
+  // Default health values (can be overridden)
+  [BLOCK_TYPES.WOOD_PLANKS]: { health: 50 },
+  [BLOCK_TYPES.LOG]: { health: 60 },
+  [BLOCK_TYPES.GLASS]: { health: 10 },
+  [BLOCK_TYPES.BRICK]: { health: 100 },
+  [BLOCK_TYPES.CLAY]: { health: 80 },
+  [BLOCK_TYPES.STONE_BRICK]: { health: 150 },
+  [BLOCK_TYPES.STONE]: { health: 120 },
+  [BLOCK_TYPES.DIRT]: { health: 20 },
+  [BLOCK_TYPES.GRASS]: { health: 20 },
+  [BLOCK_TYPES.SAND]: { health: 15 },
+  [BLOCK_TYPES.GRAVEL]: { health: 25 },
+  [BLOCK_TYPES.OAK_LEAVES]: { health: 5 },
+  [BLOCK_TYPES.ICE]: { health: 30 },
+
+  // Special properties
   [BLOCK_TYPES.WATER]: {
     isLiquid: true,
-    indestructible: true
+    indestructible: true // Water cannot be destroyed
   },
-  
   [BLOCK_TYPES.DIAMOND_ORE]: {
     resource: true,
-    resourceAmount: 3
+    resourceAmount: 3,
+    health: 200 // Ores might be tougher
+  },
+  // Add other ores or special blocks here
+  [BLOCK_TYPES.INFECTED_SHADOW]: {
+    health: 500, // Example: Tougher special block
+    indestructible: false // Assuming it can be destroyed
   }
+  // Blocks without explicit entries will have undefined health by default
 };
 
 /**

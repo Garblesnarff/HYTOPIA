@@ -5,29 +5,36 @@
  * Handles player detection, chasing, and attacking with cooldown.
  * 
  * Dependencies:
- * - HYTOPIA SDK BaseEntityController, PlayerEntity
+ * - HYTOPIA SDK BaseEntityController, PlayerEntity, SimpleEntityController
  * - Enemy constants from ../../constants/enemy-config
  * - BasicEnemyEntity class
  * 
  * @author Cline
  */
 
-import { BaseEntityController, Entity, EntityEvent, PlayerEntity } from 'hytopia';
+import { BaseEntityController, Entity, PlayerEntity, Vector3, Vector3Like, SimpleEntityController } from 'hytopia';
 import {
   BASIC_ENEMY_ATTACK_RANGE,
   BASIC_ENEMY_ATTACK_COOLDOWN_MS,
+  BASIC_ENEMY_DAMAGE,
 } from '../../constants/enemy-config';
 import BasicEnemyEntity from './basicEnemy';
-// House targeting utility
 import { getPlayerHouseDoorPosition } from '../../utils/house-utils';
+import { BlockHealthManager } from '../../world/block-health-manager';
+import { BLOCK_TYPES } from '../../constants/block-types';
 
 enum EnemyState {
   CHASE = 'CHASE',
-  ATTACK = 'ATTACK',
+  ATTACK_BLOCK = 'ATTACK_BLOCK',
+  ATTACK_HOUSE = 'ATTACK_HOUSE',
 }
 
 export class EnemyController extends BaseEntityController {
   private state: EnemyState = EnemyState.CHASE;
+  private targetBlockPos: Vector3 | null = null;
+  private lastBlockAttackTime: number = 0;
+  private readonly BLOCK_ATTACK_COOLDOWN_MS = 1000;
+
   /**
    * Enemy AI always targets the player house door position.
    * Enemies will move toward the house at all times, and "attack" when close enough.
@@ -41,37 +48,106 @@ export class EnemyController extends BaseEntityController {
     const world = entity.world;
     const housePos = getPlayerHouseDoorPosition(world);
 
-    // Calculate distance to house door
-    const dx = housePos.x - entity.position.x;
-    const dz = housePos.z - entity.position.z;
-    const dist = Math.sqrt(dx * dx + dz * dz);
-
-    if (dist > BASIC_ENEMY_ATTACK_RANGE) {
-      this.state = EnemyState.CHASE;
-    } else {
-      this.state = EnemyState.ATTACK;
-    }
+    // --- Debug Logging ---
+    // (Removed per user request)
+    // --- End Debug Logging ---
 
     switch (this.state) {
       case EnemyState.CHASE:
-        this.chaseHouse(entity, housePos);
+        this.handleChaseState(entity, housePos);
         break;
-      case EnemyState.ATTACK:
-        this.attackHouse(entity, housePos);
+      // case EnemyState.ATTACK_BLOCK:
+      //   this.handleAttackBlockState(entity);
+      //   break;
+      case EnemyState.ATTACK_HOUSE:
+        this.handleAttackHouseState(entity, housePos);
         break;
     }
   }
 
-  /**
-   * Move toward the player house door.
-   * @param entity The enemy entity
-   * @param housePos The house door position
-   */
-  private chaseHouse(entity: BasicEnemyEntity, housePos: { x: number; y: number; z: number }): void {
-    const controller = entity.controller as any;
+  private handleChaseState(entity: BasicEnemyEntity, housePos: Vector3Like): void {
+    const housePosVec = Vector3.fromVector3Like(housePos);
+    const entityPosVec = Vector3.fromVector3Like(entity.position);
+
+    // Check distance to house for potential ATTACK_HOUSE transition
+    const dxH = entityPosVec.x - housePosVec.x;
+    const dyH = entityPosVec.y - housePosVec.y;
+    const dzH = entityPosVec.z - housePosVec.z;
+    const distToHouse = Math.sqrt(dxH*dxH + dyH*dyH + dzH*dzH);
+    if (distToHouse <= BASIC_ENEMY_ATTACK_RANGE) {
+      this.state = EnemyState.ATTACK_HOUSE;
+      this.targetBlockPos = null;
+      this.stopMovement(entity);
+      return;
+    }
+
+    // Always call chaseHouse if not in ATTACK_HOUSE range
+    this.chaseHouse(entity, housePosVec);
+  }
+
+  private handleAttackBlockState(entity: BasicEnemyEntity): void {
+    if (!this.targetBlockPos) {
+      this.state = EnemyState.CHASE;
+      return;
+    }
+
+    const controller = entity.controller as SimpleEntityController;
+    if (controller?.face) {
+      controller.face(this.targetBlockPos, entity.speed * 4);
+    }
+
+    const blockType = entity.world?.chunkLattice.getBlockType(this.targetBlockPos);
+    if (!blockType || blockType.id === BLOCK_TYPES.AIR || !BlockHealthManager.instance.isBlockRegistered(this.targetBlockPos)) {
+      this.state = EnemyState.CHASE;
+      this.targetBlockPos = null;
+      return;
+    }
+
+    const now = Date.now();
+    if (now - this.lastBlockAttackTime >= this.BLOCK_ATTACK_COOLDOWN_MS) {
+      this.lastBlockAttackTime = now;
+      entity.startModelOneshotAnimations(['attack']);
+      const destroyed = BlockHealthManager.instance.damageBlock(this.targetBlockPos, BASIC_ENEMY_DAMAGE);
+      if (destroyed) {
+        this.state = EnemyState.CHASE;
+        this.targetBlockPos = null;
+      }
+    }
+  }
+
+  private handleAttackHouseState(entity: BasicEnemyEntity, housePos: Vector3Like): void {
+    const housePosVec = Vector3.fromVector3Like(housePos);
+    const entityPosVec = Vector3.fromVector3Like(entity.position);
+    const dxH2 = entityPosVec.x - housePosVec.x;
+    const dyH2 = entityPosVec.y - housePosVec.y;
+    const dzH2 = entityPosVec.z - housePosVec.z;
+    const distToHouse = Math.sqrt(dxH2*dxH2 + dyH2*dyH2 + dzH2*dzH2);
+    if (distToHouse > BASIC_ENEMY_ATTACK_RANGE + 0.5) {
+      this.state = EnemyState.CHASE;
+      return;
+    }
+
+    const controller = entity.controller as SimpleEntityController;
+    if (controller?.face) {
+      controller.face(housePosVec, entity.speed * 2);
+    }
+
+    this.attackHouse(entity, housePosVec);
+  }
+
+  private stopMovement(entity: BasicEnemyEntity): void {
+    entity.setLinearVelocity({ x: 0, y: 0, z: 0 });
+    try {
+      entity.stopModelAnimations(['walk', 'run']);
+      entity.startModelLoopedAnimations(['idle']);
+    } catch {}
+  }
+
+  private chaseHouse(entity: BasicEnemyEntity, housePosVec: Vector3): void {
+    const controller = entity.controller as SimpleEntityController;
     if (controller?.move && controller?.face) {
-      controller.move(housePos, entity.speed);
-      controller.face(housePos, entity.speed * 2);
+      controller.move(housePosVec, entity.speed, { moveIgnoreAxes: { x: false, y: true, z: false } });
+      controller.face(housePosVec, entity.speed * 2);
     }
     try {
       entity.stopModelAnimations(['idle']);
@@ -79,22 +155,15 @@ export class EnemyController extends BaseEntityController {
     } catch {}
   }
 
-  /**
-   * "Attack" the house when close enough.
-   * This could be expanded to damage the house or trigger an event.
-   * @param entity The enemy entity
-   * @param housePos The house door position
-   */
-  private attackHouse(entity: BasicEnemyEntity, housePos: { x: number; y: number; z: number }): void {
+  private attackHouse(entity: BasicEnemyEntity, housePosVec: Vector3): void {
     const now = Date.now();
     if (now - entity.lastAttackTime < BASIC_ENEMY_ATTACK_COOLDOWN_MS) {
       return;
     }
     entity.lastAttackTime = now;
 
-    // TODO: Implement house damage logic here if desired
+    // TODO: Implement actual house damage logic here if desired
 
-    // Play attack animation
     try {
       entity.startModelOneshotAnimations(['attack']);
     } catch {}

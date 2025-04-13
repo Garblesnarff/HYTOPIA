@@ -34,6 +34,8 @@ import { spawnMutatedPlants } from './src/world/entities/spawn-mutated-plants';
 import { spawnScrapMetal } from './src/world/entities/spawn-scrap-metal';
 import { CustomPlayerController } from './src/player/custom-player-controller';
 import { spawnEnemiesInArea } from './src/world/entities/spawn-enemies';
+// Import Block Health Manager
+import { BlockHealthManager } from './src/world/block-health-manager';
 
 // We'll keep the map import as a fallback
 import worldMap from './assets/map.json';
@@ -67,6 +69,13 @@ startServer(world => {
     console.error('Error generating world map:', error);
     console.log('Falling back to JSON map...');
     world.loadMap(worldMap);
+  }
+
+  // Initialize Block Health Manager after world generation/loading
+  try {
+    BlockHealthManager.instance.initialize(world);
+  } catch (error) {
+    console.error("[Root Index] ERROR during BlockHealthManager init:", error);
   }
 
   // Initialize Crafting Tables after world generation/loading
