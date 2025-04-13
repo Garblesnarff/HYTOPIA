@@ -61,17 +61,17 @@ export function buildPlayerHouse(world: World): void {
   const areaCenterZ = startZ + area.depth / 2;
   
   // --- Terrain Modification ---
-  // Create a small hill for the house to sit on
-  createHill(
-    world,
-    { 
-      x: areaCenterX, 
-      y: WORLD_HEIGHT.BASE, 
-      z: areaCenterZ 
-    },
-    30, // Radius
-    3   // Height
-  );
+  // Removed hill/platform generation so the house is at ground level
+  // createHill(
+  //   world,
+  //   { 
+  //     x: areaCenterX, 
+  //     y: WORLD_HEIGHT.BASE, 
+  //     z: areaCenterZ 
+  //   },
+  //   30, // Radius
+  //   3   // Height
+  // );
   
   // --- Structure Generation ---
   // Build the main house structure (which includes interior)

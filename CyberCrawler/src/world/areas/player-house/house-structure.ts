@@ -66,7 +66,7 @@ export function buildMainHouse(world: World): void {
   const houseStartZ = centerZ - houseDepth / 2;
   // Find the actual ground height at the house's corner
   const groundY = findGroundHeight(world, houseStartX, houseStartZ); 
-  const houseStartY = groundY + 1; // Raise house 1 block above ground level
+  const houseStartY = groundY; // Place house directly at ground level
   console.log(`Placing player house foundation at Y=${houseStartY} (Ground was Y=${groundY})`);
 
   // Foundation platform - Placed at groundY (now 1 block below house floor)

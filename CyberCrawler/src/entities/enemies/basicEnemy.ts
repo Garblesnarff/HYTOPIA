@@ -26,6 +26,7 @@ export class BasicEnemyEntity extends Entity {
   public damage: number;
   public speed: number;
   public lastAttackTime: number = 0;
+  public isGrounded: boolean = false; // Track grounded state
 
   private healthBar: HealthBar | null = null;
 
@@ -37,12 +38,12 @@ export class BasicEnemyEntity extends Entity {
       name: 'BasicEnemy',
       rigidBodyOptions: {
         enabledRotations: { x: false, y: true, z: false },
-        angularDamping: 1,
+        linearDamping: 0.1,
+        angularDamping: 0.1,
         colliders: [
           {
-            shape: ColliderShape.BALL,
+            shape: ColliderShape.BALL, // Use BALL for reliable ground contact
             radius: 0.5,
-            
             collisionGroups: {
               belongsTo: [4], // CollisionGroup.ENTITY
               collidesWith: [8, 1, 4, 2], // PLAYER, BLOCK, ENTITY, ENTITY_SENSOR
@@ -57,6 +58,19 @@ export class BasicEnemyEntity extends Entity {
     this.maxHealth = BASIC_ENEMY_HEALTH;
     this.damage = BASIC_ENEMY_DAMAGE;
     this.speed = BASIC_ENEMY_SPEED;
+
+    // Add a ground sensor collider to track grounded state
+    this.createAndAddChildCollider({
+      shape: ColliderShape.CYLINDER,
+      radius: 0.3,
+      halfHeight: 0.08, // Small sensor
+      isSensor: true,
+      relativePosition: { x: 0, y: -0.5, z: 0 }, // Just below the ball
+      tag: 'groundSensor',
+      onCollision: (other: any, started: any) => {
+        this.isGrounded = started;
+      },
+    });
 
     this.on(EntityEvent.SPAWN, () => {
       if (this.world) {

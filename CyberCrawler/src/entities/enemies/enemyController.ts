@@ -33,7 +33,10 @@ export class EnemyController extends BaseEntityController {
   private state: EnemyState = EnemyState.CHASE;
   private targetBlockPos: Vector3 | null = null;
   private lastBlockAttackTime: number = 0;
+  private lastJumpTime: number = 0;
   private readonly BLOCK_ATTACK_COOLDOWN_MS = 1000;
+  private readonly JUMP_COOLDOWN_MS = 1000;
+  private readonly JUMP_STRENGTH = 8;
 
   /**
    * Enemy AI always targets the player house door position.
@@ -47,10 +50,6 @@ export class EnemyController extends BaseEntityController {
 
     const world = entity.world;
     const housePos = getPlayerHouseDoorPosition(world);
-
-    // --- Debug Logging ---
-    // (Removed per user request)
-    // --- End Debug Logging ---
 
     switch (this.state) {
       case EnemyState.CHASE:
