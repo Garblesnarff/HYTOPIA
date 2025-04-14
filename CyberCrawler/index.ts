@@ -59,23 +59,23 @@ startServer(world => {
 
   // Enable debug visualization of colliders (wireframes)
   // world.simulation.enableDebugRendering(true);
+
+  // Initialize Block Health Manager BEFORE world generation/loading
+  try {
+    BlockHealthManager.instance.initialize(world);
+  } catch (error) {
+    console.error("[Root Index] ERROR during BlockHealthManager init:", error);
+  }
   
   // Use our programmatic world generation instead of loading from JSON
   try {
     console.log('Generating world map...');
-    generateWorldMap(world);
+    generateWorldMap(world); // Now BlockHealthManager is ready for block registration
     console.log('World generation complete!');
   } catch (error) {
     console.error('Error generating world map:', error);
     console.log('Falling back to JSON map...');
     world.loadMap(worldMap);
-  }
-
-  // Initialize Block Health Manager after world generation/loading
-  try {
-    BlockHealthManager.instance.initialize(world);
-  } catch (error) {
-    console.error("[Root Index] ERROR during BlockHealthManager init:", error);
   }
 
   // Initialize Crafting Tables after world generation/loading

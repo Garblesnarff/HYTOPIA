@@ -79,7 +79,6 @@ export class BlockHealthManager {
       const key = this.getCoordKey(coord);
       if (!this.blockHealth.has(key)) { // Don't overwrite existing health if re-registering
          this.blockHealth.set(key, initialHealth ?? 1); // Default to 1 health if undefined but forced
-         // console.log(`[BlockHealthManager] Registered block at ${key} with health ${this.blockHealth.get(key)}`);
       }
     }
   }

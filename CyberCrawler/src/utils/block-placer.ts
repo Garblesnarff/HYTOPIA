@@ -265,6 +265,18 @@ export function placePitchedRoof(
  * @param {number} blockTypeId - The block type ID to use
  * @returns {boolean} Success of the operation
  */
+/**
+ * Places a cuboid (3D rectangle) of blocks, registering each with BlockHealthManager.
+ * 
+ * @param {World} world - The game world
+ * @param {Vector3Like} startPos - Starting corner position
+ * @param {Object} dimensions - Dimensions of the cuboid
+ * @param {number} dimensions.width - Width (X-axis)
+ * @param {number} dimensions.height - Height (Y-axis)
+ * @param {number} dimensions.depth - Depth (Z-axis)
+ * @param {number} blockTypeId - The block type ID to use
+ * @returns {boolean} Success of the operation
+ */
 export function placeCuboid(
   world: World,
   startPos: Vector3Like,
@@ -275,11 +287,11 @@ export function placeCuboid(
     for (let x = 0; x < dimensions.width; x++) {
       for (let y = 0; y < dimensions.height; y++) {
         for (let z = 0; z < dimensions.depth; z++) {
-          world.chunkLattice?.setBlock({
-            x: startPos.x + x,
-            y: startPos.y + y,
-            z: startPos.z + z
-          }, blockTypeId);
+          placeBlock(
+            world,
+            { x: startPos.x + x, y: startPos.y + y, z: startPos.z + z },
+            blockTypeId
+          );
         }
       }
     }
